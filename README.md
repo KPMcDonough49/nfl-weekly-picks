@@ -167,3 +167,4 @@ MIT License - see LICENSE file for details.
 - [ ] Custom scoring systems
 - [ ] Tournament brackets
 - [ ] Social features (comments, reactions)
+# nfl-weekly-picks
