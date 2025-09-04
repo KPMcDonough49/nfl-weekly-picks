@@ -1,0 +1,37 @@
+name: Fetch NFL Lines
+
+on:
+  schedule:
+    - cron: '0 12 * * 3'  # Every Wednesday at 12pm UTC
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  fetch-lines:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Fetch NFL lines
+        run: npm run fetch:lines
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .cache/
+          git diff --staged --quiet || git commit -m "Update NFL lines - $(date)"
+          git push
