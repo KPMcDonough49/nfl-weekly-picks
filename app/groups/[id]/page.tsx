@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { UserGroupIcon, LockClosedIcon, UserIcon, TrophyIcon, ClipboardIcon, CheckIcon } from '@heroicons/react/24/outline'
 import { useAuth } from '@/lib/auth-context'
+import { getCurrentSeasonAndWeek } from '@/lib/client-utils'
 
 interface Game {
   id: string
@@ -36,7 +37,10 @@ export default function GroupDetail() {
   const [groupName, setGroupName] = useState('')
   const [groupCreatedBy, setGroupCreatedBy] = useState('')
   const [groupPassword, setGroupPassword] = useState<string | null>(null)
-  const [currentWeek, setCurrentWeek] = useState(1)
+  const [currentWeek, setCurrentWeek] = useState(() => {
+    const { week } = getCurrentSeasonAndWeek()
+    return week
+  })
   const [loading, setLoading] = useState(true)
   const [picksLocked, setPicksLocked] = useState(false)
   const [viewMode, setViewMode] = useState<'members' | 'picks' | 'summary' | 'pastWeeks'>('members')
