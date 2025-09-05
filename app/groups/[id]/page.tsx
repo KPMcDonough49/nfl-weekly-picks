@@ -171,11 +171,7 @@ export default function GroupDetail() {
   }
 
   const handlePick = (gameId: string, pick: string) => {
-    // Check if this specific game has started
-    if (isGameLocked(gameId)) {
-      return // Don't allow picking games that have started
-    }
-    
+    // Allow picks for started games but they'll be marked as locked in the UI
     setGames(prev => prev.map(game => {
       if (game.id === gameId) {
         // Convert 'home'/'away' to actual team names
@@ -261,12 +257,9 @@ export default function GroupDetail() {
       return
     }
 
-    // Filter out games that have already started
+    // Include all picks (both locked and unlocked games)
     const picksToSubmit = games
-      .filter(game => {
-        if (!game.userPick) return false
-        return !isGameLocked(game.id) // Only include games that haven't started
-      })
+      .filter(game => game.userPick) // Only include games with picks
       .map(game => ({
         gameId: game.id,
         pick: game.userPick!,
@@ -656,6 +649,12 @@ export default function GroupDetail() {
                       <div className="text-sm text-gray-600">
                         O/U: {game.overUnder}
                       </div>
+                      {/* Show scores for started games */}
+                      {isGameLocked(game.id) && (game.homeScore !== null || game.awayScore !== null) && (
+                        <div className="text-lg font-bold text-nfl-blue mt-2">
+                          Final: {game.awayTeam} {game.awayScore} - {game.homeTeam} {game.homeScore}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -664,23 +663,23 @@ export default function GroupDetail() {
                       onClick={() => handlePick(game.id, 'away')}
                       disabled={isGameLocked(game.id)}
                       className={`flex-1 py-2 px-4 rounded-lg border-2 transition-all ${
-                        game.userPick === 'away'
+                        game.userPick === game.awayTeam
                           ? 'border-nfl-blue bg-nfl-blue text-white'
                           : 'border-gray-300 hover:border-nfl-blue hover:bg-nfl-blue hover:text-white'
                       } ${isGameLocked(game.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
-                      {game.awayTeam} {formatSpread(game.spread, false)}
+                      {isGameLocked(game.id) ? 'LOCKED' : `${game.awayTeam} ${formatSpread(game.spread, false)}`}
                     </button>
                     <button
                       onClick={() => handlePick(game.id, 'home')}
                       disabled={isGameLocked(game.id)}
                       className={`flex-1 py-2 px-4 rounded-lg border-2 transition-all ${
-                        game.userPick === 'home'
+                        game.userPick === game.homeTeam
                           ? 'border-nfl-blue bg-nfl-blue text-white'
                           : 'border-gray-300 hover:border-nfl-blue hover:bg-nfl-blue hover:text-white'
                       } ${isGameLocked(game.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
-                      {game.homeTeam} {formatSpread(game.spread, true)}
+                      {isGameLocked(game.id) ? 'LOCKED' : `${game.homeTeam} ${formatSpread(game.spread, true)}`}
                     </button>
                   </div>
                 </div>
@@ -690,10 +689,10 @@ export default function GroupDetail() {
             <div className="mt-6">
               <button
                 onClick={handleSubmitPicks}
-                disabled={games.filter(g => g.userPick && !isGameLocked(g.id)).length === 0}
+                disabled={games.filter(g => g.userPick).length === 0}
                 className="btn-primary w-full py-3 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Submit Picks ({games.filter(g => g.userPick && !isGameLocked(g.id)).length} available)
+                Submit Picks ({games.filter(g => g.userPick).length} total)
               </button>
             </div>
           </div>
