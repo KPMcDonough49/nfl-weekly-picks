@@ -32,7 +32,7 @@ export async function POST(
     }
 
     // Check if group has password protection
-    if (group.password && group.password !== password) {
+    if (group.password && group.password.trim() !== '' && group.password !== password) {
       return NextResponse.json(
         { success: false, error: 'Incorrect password' },
         { status: 401 }

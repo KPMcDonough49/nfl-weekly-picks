@@ -223,7 +223,7 @@ export default function GroupDetail() {
         },
         body: JSON.stringify({
           userId: user.id,
-          password: password || null
+          password: password || ''
         })
       })
 
