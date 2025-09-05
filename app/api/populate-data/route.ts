@@ -26,13 +26,15 @@ export async function POST() {
       console.log('Eagles game NOT found - this is the problem!')
     }
     
-    // Check picks
+    // Check picks - first get games for week 1, then get picks for those games
+    const week1Games = await prisma.game.findMany({
+      where: { week: 1, season: 2025 },
+      select: { id: true }
+    })
+    
     const picks = await prisma.pick.findMany({
       where: {
-        game: {
-          week: 1,
-          season: 2025
-        }
+        gameId: { in: week1Games.map(g => g.id) }
       },
       select: { pick: true, confidence: true },
       take: 5
