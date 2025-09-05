@@ -9,7 +9,7 @@ interface Game {
   awayTeam: string
   spread: number | null
   overUnder: number | null
-  gameTime: string
+  gameTime: string | Date
   status: string
   homeScore?: number | null
   awayScore?: number | null
