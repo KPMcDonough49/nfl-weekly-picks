@@ -110,6 +110,11 @@ export default function GroupDetail() {
   }
 
 
+  // Debug useEffect to monitor state changes
+  useEffect(() => {
+    console.log('State changed:', { joinPasswordPrompt, groupPassword, isMember })
+  }, [joinPasswordPrompt, groupPassword, isMember])
+
   useEffect(() => {
     // Fetch group data
     const fetchGroupData = async () => {
@@ -209,6 +214,7 @@ export default function GroupDetail() {
     if (groupPassword) {
       console.log('Setting join password prompt to true')
       setJoinPasswordPrompt(true)
+      alert('Password prompt should appear now!')
     } else {
       console.log('No password, joining directly')
       joinGroup('')
@@ -602,6 +608,7 @@ export default function GroupDetail() {
         )}
 
         {/* Join Password Prompt Modal */}
+        {console.log('Rendering modal check:', { joinPasswordPrompt, groupPassword })}
         {joinPasswordPrompt && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
