@@ -209,7 +209,7 @@ export default function GroupSummaryPage() {
   // Create picks with results for display
   const picksWithResults = games.map(game => {
     const gamePicks = membersWithPicks.map(member => {
-      const pick = member.picks.find(p => p && p.gameId === game.id)
+      const pick = member.picks.find((p: any) => p && p.gameId === game.id)
       return {
         memberId: member.id,
         memberName: member.name,
