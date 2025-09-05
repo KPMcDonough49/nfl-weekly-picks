@@ -51,6 +51,36 @@ export default function GroupDetail() {
   const [joinPasswordPrompt, setJoinPasswordPrompt] = useState(false)
   const [joinPasswordInput, setJoinPasswordInput] = useState('')
 
+  // Fetch members with pick status
+  const fetchMembers = async () => {
+    try {
+      const res = await fetch(`/api/groups/${groupId}/members?week=${currentWeek}&season=2025`)
+      const json = await res.json()
+      if (json.success) {
+        const membersList = json.data.members.map((member: any) => ({
+          id: member.id,
+          name: member.name,
+          wins: member.wins || 0,
+          losses: member.losses || 0,
+          ties: member.ties || 0,
+          hasPicks: member.hasPicks,
+          pickCount: member.pickCount || 0
+        }))
+        setMembers(membersList)
+        
+        // Check if current user is a member
+        if (user) {
+          const userIsMember = membersList.some((member: any) => member.id === user.id)
+          setIsMember(userIsMember)
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load members', e)
+      // Fallback to empty array instead of hardcoded data
+      setMembers([])
+    }
+  }
+
   // Helper function to format spreads correctly
   const formatSpread = (spread: number, isHome: boolean) => {
     if (spread > 0) {
@@ -107,35 +137,6 @@ export default function GroupDetail() {
       }
     }
 
-    // Fetch members with pick status
-    const fetchMembers = async () => {
-      try {
-        const res = await fetch(`/api/groups/${groupId}/members?week=${currentWeek}&season=2025`)
-        const json = await res.json()
-        if (json.success) {
-          const membersList = json.data.members.map((member: any) => ({
-            id: member.id,
-            name: member.name,
-            wins: member.wins || 0,
-            losses: member.losses || 0,
-            ties: member.ties || 0,
-            hasPicks: member.hasPicks,
-            pickCount: member.pickCount || 0
-          }))
-          setMembers(membersList)
-          
-          // Check if current user is a member
-          if (user) {
-            const userIsMember = membersList.some((member: any) => member.id === user.id)
-            setIsMember(userIsMember)
-          }
-        }
-      } catch (e) {
-        console.error('Failed to load members', e)
-        // Fallback to empty array instead of hardcoded data
-        setMembers([])
-      }
-    }
     
     // Picks are now locked per individual game based on game start time
     // No global lock - each game locks when it starts
