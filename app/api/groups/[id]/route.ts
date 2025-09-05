@@ -9,14 +9,7 @@ export async function GET(
     const groupId = params.id
 
     const group = await prisma.group.findUnique({
-      where: { id: groupId },
-      include: {
-        members: {
-          include: {
-            user: true
-          }
-        }
-      }
+      where: { id: groupId }
     })
 
     if (!group) {
@@ -26,6 +19,17 @@ export async function GET(
       )
     }
 
+    // Get members separately to handle missing users gracefully
+    const members = await prisma.groupMember.findMany({
+      where: { groupId: groupId },
+      include: {
+        user: true
+      }
+    })
+
+    // Filter out members with missing users
+    const validMembers = members.filter(member => member.user !== null)
+
     // Transform the data to match the frontend interface
     const transformedGroup = {
       id: group.id,
@@ -33,7 +37,8 @@ export async function GET(
       description: group.description,
       createdBy: group.createdBy,
       currentWeek: 1, // TODO: Calculate actual current week
-      memberCount: group.members.length
+      memberCount: validMembers.length,
+      members: validMembers
     }
 
     return NextResponse.json({
