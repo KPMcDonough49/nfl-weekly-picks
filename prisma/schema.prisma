@@ -12,8 +12,9 @@ datasource db {
 
 model User {
   id        String   @id @default(cuid())
-  email     String   @unique
+  username  String   @unique
   name      String
+  email     String   @unique // Keep for compatibility, but use username for login
   password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

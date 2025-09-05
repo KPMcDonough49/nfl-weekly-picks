@@ -3,15 +3,17 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/lib/auth-context'
 
 export default function SignUp() {
+  const [username, setUsername] = useState('')
   const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const { signUp } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -24,19 +26,15 @@ export default function SignUp() {
       return
     }
 
-    try {
-      // TODO: Implement actual authentication
-      console.log('Sign up:', { name, email, password })
-      
-      // For demo purposes, set signed in flag
-      localStorage.setItem('isSignedIn', 'true')
-      
+    const success = await signUp(username, name, password, confirmPassword)
+    
+    if (success) {
       router.push('/dashboard')
-    } catch (err) {
-      setError('Failed to create account')
-    } finally {
-      setLoading(false)
+    } else {
+      setError('Failed to create account. Username may already exist.')
     }
+    
+    setLoading(false)
   }
 
   return (
@@ -56,6 +54,22 @@ export default function SignUp() {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
+              <label htmlFor="username" className="sr-only">
+                Username
+              </label>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                autoComplete="username"
+                required
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-nfl-blue focus:border-nfl-blue focus:z-10 sm:text-sm"
+                placeholder="Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+            </div>
+            <div>
               <label htmlFor="name" className="sr-only">
                 Full name
               </label>
@@ -65,26 +79,10 @@ export default function SignUp() {
                 type="text"
                 autoComplete="name"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-nfl-blue focus:border-nfl-blue focus:z-10 sm:text-sm"
+                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-nfl-blue focus:border-nfl-blue focus:z-10 sm:text-sm"
                 placeholder="Full name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <div>
-              <label htmlFor="email" className="sr-only">
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-nfl-blue focus:border-nfl-blue focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             <div>

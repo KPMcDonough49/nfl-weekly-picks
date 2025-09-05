@@ -12,8 +12,9 @@ export async function POST(request: NextRequest) {
     await prisma.$executeRaw`
       CREATE TABLE IF NOT EXISTS "users" (
         "id" TEXT NOT NULL PRIMARY KEY,
-        "email" TEXT NOT NULL UNIQUE,
+        "username" TEXT NOT NULL UNIQUE,
         "name" TEXT NOT NULL,
+        "email" TEXT NOT NULL UNIQUE,
         "password" TEXT NOT NULL,
         "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
