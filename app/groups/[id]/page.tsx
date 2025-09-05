@@ -127,7 +127,7 @@ export default function GroupDetail() {
 
     const fetchGames = async () => {
       try {
-        const res = await fetch('/api/games')
+        const res = await fetch(`/api/games?week=${currentWeek}&season=2025`)
         const json = await res.json()
         if (json.success) {
           setGames(json.data.games as Game[])
@@ -172,9 +172,14 @@ export default function GroupDetail() {
       return // Don't allow picking games that have started
     }
     
-    setGames(prev => prev.map(game => 
-      game.id === gameId ? { ...game, userPick: pick } : game
-    ))
+    setGames(prev => prev.map(game => {
+      if (game.id === gameId) {
+        // Convert 'home'/'away' to actual team names
+        const teamName = pick === 'home' ? game.homeTeam : game.awayTeam
+        return { ...game, userPick: teamName }
+      }
+      return game
+    }))
   }
 
   const handlePasswordVerification = () => {
@@ -201,11 +206,7 @@ export default function GroupDetail() {
   }
 
   const handleJoinPasswordVerification = () => {
-    if (joinPasswordInput === groupPassword) {
-      joinGroup(joinPasswordInput)
-    } else {
-      alert('Incorrect password')
-    }
+    joinGroup(joinPasswordInput)
   }
 
   const joinGroup = async (password: string) => {
@@ -719,10 +720,10 @@ export default function GroupDetail() {
                 {games.filter(g => g.userPick).map((game) => (
                   <div key={game.id} className="text-sm p-2 bg-gray-50 rounded">
                     <div className="font-medium">
-                      {game.userPick === 'away' ? game.awayTeam : game.homeTeam}
+                      {game.userPick}
                     </div>
                     <div className="text-gray-600 text-xs">
-                      vs {game.userPick === 'away' ? game.homeTeam : game.awayTeam}
+                      vs {game.userPick === game.awayTeam ? game.homeTeam : game.awayTeam}
                     </div>
                   </div>
                 ))}
