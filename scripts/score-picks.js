@@ -176,7 +176,7 @@ function getScoringPhase(now) {
 
 function gradePick(pick, game) {
   const { pick: pickType } = pick
-  const { homeScore, awayScore, spread, overUnder } = game
+  const { homeTeam, awayTeam, homeScore, awayScore, spread, overUnder } = game
   
   // Calculate total points for over/under
   const totalPoints = homeScore + awayScore
@@ -190,7 +190,7 @@ function gradePick(pick, game) {
     return totalPoints < overUnder ? 'correct' : 'incorrect'
   }
   
-  // Handle spread picks (home/away)
+  // Handle spread picks (team names)
   // The spread represents how many points the home team is favored by
   // Negative spread = home team is favored by that many points
   // Positive spread = away team is favored by that many points
@@ -198,13 +198,13 @@ function gradePick(pick, game) {
   const actualMargin = homeScore - awayScore
   const homeTeamSpread = Math.abs(spread || 0) // How many points home team is favored by (absolute value)
   
-  if (pickType === 'home') {
+  if (pickType === homeTeam) {
     // User picked the home team
     // Home team covers if they win by MORE than the spread
     // Example: Eagles favored by 8.5, they need to win by 9+ to cover
     if (actualMargin === homeTeamSpread) return 'tie'
     return actualMargin > homeTeamSpread ? 'correct' : 'incorrect'
-  } else if (pickType === 'away') {
+  } else if (pickType === awayTeam) {
     // User picked the away team  
     // Away team covers if they either win OR lose by less than the spread
     // Example: Eagles favored by 8.5, Cowboys cover if they lose by 8 or less
