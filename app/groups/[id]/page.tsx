@@ -199,14 +199,18 @@ export default function GroupDetail() {
   }
 
   const handleJoinGroup = () => {
+    console.log('handleJoinGroup called', { user: !!user, groupPassword, joinPasswordPrompt })
+    
     if (!user) {
       alert('You must be signed in to join a group')
       return
     }
 
     if (groupPassword) {
+      console.log('Setting join password prompt to true')
       setJoinPasswordPrompt(true)
     } else {
+      console.log('No password, joining directly')
       joinGroup('')
     }
   }
@@ -489,7 +493,10 @@ export default function GroupDetail() {
               <div className="space-y-2">
                 {!isMember ? (
                   <button 
-                    onClick={handleJoinGroup}
+                    onClick={() => {
+                      console.log('Join Group clicked', { user: !!user, joining, isMember })
+                      handleJoinGroup()
+                    }}
                     className="w-full btn-primary text-sm"
                     disabled={!user || joining}
                   >
