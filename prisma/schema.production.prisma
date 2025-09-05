@@ -1,0 +1,117 @@
+// Production Prisma schema for PostgreSQL
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  groupMemberships GroupMember[]
+  picks           Pick[]
+  weeklyScores    WeeklyScore[]
+  createdGroups   Group[]       @relation("GroupCreator")
+
+  @@map("users")
+}
+
+model Group {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  password    String?  // Optional password protection
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  creator   User           @relation("GroupCreator", fields: [createdBy], references: [id])
+  members   GroupMember[]
+  picks     Pick[]
+  weeklyScores WeeklyScore[]
+
+  @@map("groups")
+}
+
+model GroupMember {
+  id      String @id @default(cuid())
+  userId  String
+  groupId String
+  joinedAt DateTime @default(now())
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId])
+  @@map("group_members")
+}
+
+model Game {
+  id          String   @id // Use API game ID directly
+  week        Int
+  season      Int
+  homeTeam    String
+  awayTeam    String
+  homeScore   Int?
+  awayScore   Int?
+  spread      Float?
+  overUnder   Float?
+  gameTime    DateTime
+  status      String   @default("scheduled") // scheduled, in_progress, final
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("games")
+}
+
+model Pick {
+  id        String   @id @default(cuid())
+  userId    String
+  gameId    String
+  groupId   String
+  pick      String   // home, away, over, under
+  confidence Int?     // 1-5 confidence level
+  result    String?  // correct, incorrect, tie, pending
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId, groupId])
+  @@map("picks")
+}
+
+model WeeklyScore {
+  id        String   @id @default(cuid())
+  userId    String
+  groupId   String
+  week      Int
+  season    Int
+  wins      Int      @default(0)
+  losses    Int      @default(0)
+  ties      Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId, week, season])
+  @@map("weekly_scores")
+}

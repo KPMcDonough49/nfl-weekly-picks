@@ -14,8 +14,12 @@
     "score:picks": "node scripts/score-picks.js",
     "setup:cron": "node scripts/setup-cron.js",
     "check:scoring": "node scripts/check-scoring-status.js",
+    "update:scores": "node scripts/update-scores-from-espn.js",
     "db:push": "prisma db push",
-    "db:generate": "prisma generate"
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "setup:production": "./scripts/setup-production.sh",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "next": "14.0.4",
