@@ -681,7 +681,7 @@ export default function GroupDetail() {
                           : 'border-gray-300 hover:border-nfl-blue hover:bg-nfl-blue hover:text-white'
                       } ${isGameLocked(game.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
-                      {isGameLocked(game.id) ? 'LOCKED' : game.homeTeam}
+                      {isGameLocked(game.id) ? 'LOCKED' : `${game.homeTeam} ${formatSpread(game.spread, true)}`}
                     </button>
                   </div>
                 </div>
