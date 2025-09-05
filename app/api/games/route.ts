@@ -32,9 +32,9 @@ export async function GET(request: NextRequest) {
       orderBy: { gameTime: 'asc' }
     })
 
-    // Always fetch fresh data from API to ensure we have the latest games
+    // Fetch fresh data from API if no games or incomplete data
     if (games.length === 0 || games.length < 16) {
-      console.log(`No games found in database for Week ${targetWeek}, fetching from API...`)
+      console.log(`Incomplete games data for Week ${targetWeek} (${games.length}/16), fetching from API...`)
       const apiGames = await fetchGamesForWeek(targetWeek, targetSeason)
 
       // Store games in database for picks to reference
