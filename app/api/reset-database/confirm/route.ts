@@ -18,15 +18,16 @@ export async function POST(request: Request) {
     // Import prisma here to avoid issues
     const { prisma } = await import('@/lib/db')
     
-    console.log('🗑️ Starting confirmed database reset...')
+    console.log('🗑️ Starting confirmed database reset (keeping game data)...')
     
-    // Delete all data in the correct order to respect foreign key constraints
+    // Delete user-generated data in the correct order to respect foreign key constraints
     const deletedPicks = await prisma.pick.deleteMany({})
     const deletedWeeklyScores = await prisma.weeklyScore.deleteMany({})
     const deletedGroupMembers = await prisma.groupMember.deleteMany({})
     const deletedGroups = await prisma.group.deleteMany({})
-    const deletedGames = await prisma.game.deleteMany({})
     const deletedUsers = await prisma.user.deleteMany({})
+    
+    // Note: Games are preserved for future use
     
     console.log('🎉 Database reset completed successfully!')
     
@@ -38,8 +39,8 @@ export async function POST(request: Request) {
         deletedWeeklyScores: deletedWeeklyScores.count,
         deletedGroupMembers: deletedGroupMembers.count,
         deletedGroups: deletedGroups.count,
-        deletedGames: deletedGames.count,
-        deletedUsers: deletedUsers.count
+        deletedUsers: deletedUsers.count,
+        gamesPreserved: true
       }
     })
   } catch (error) {
