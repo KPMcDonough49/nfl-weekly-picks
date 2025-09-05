@@ -213,12 +213,8 @@ export default function GroupDetail() {
 
   const handleUserClick = (userId: string, hasPicks: boolean) => {
     if (user && userId === user.id) {
-      // Current user - go to picks or summary
-      if (hasPicks) {
-        setViewMode('summary')
-      } else {
-        setViewMode('picks')
-      }
+      // Current user - always navigate to dedicated picks page
+      router.push(`/groups/${groupId}/members/${userId}/picks`)
     } else {
       // Other user - check if picks are locked
       if (picksLocked) {
@@ -392,7 +388,7 @@ export default function GroupDetail() {
               <h3 className="text-lg font-semibold mb-3">Quick Actions</h3>
               <div className="space-y-2">
                 <button 
-                  onClick={() => user && handleUserClick(user.id, false)}
+                  onClick={() => user && router.push(`/groups/${groupId}/members/${user.id}/picks`)}
                   className="w-full btn-primary text-sm"
                   disabled={!user}
                 >

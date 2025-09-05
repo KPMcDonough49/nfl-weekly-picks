@@ -68,14 +68,22 @@ export default function UserPicksPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        console.log('Fetching data for user:', userId, 'in group:', groupId)
+        
         // Fetch picks and games data
         const [picksRes, gamesRes] = await Promise.all([
           fetch(`/api/groups/${groupId}/members/${userId}/picks?week=${week}&season=${season}`),
           fetch('/api/games')
         ])
         
+        console.log('Picks response status:', picksRes.status)
+        console.log('Games response status:', gamesRes.status)
+        
         const picksJson = await picksRes.json()
         const gamesJson = await gamesRes.json()
+        
+        console.log('Picks response:', picksJson)
+        console.log('Games response success:', gamesJson.success)
         
         if (picksJson.success && gamesJson.success) {
           setUser(picksJson.data.user)
@@ -85,7 +93,8 @@ export default function UserPicksPage() {
           setSeason(picksJson.data.season)
           setGames(gamesJson.data.games)
         } else {
-          alert('Failed to load data')
+          console.error('API response failed:', { picksJson, gamesJson })
+          alert(`Failed to load data: ${picksJson.error || gamesJson.error || 'Unknown error'}`)
           router.back()
         }
       } catch (error) {
@@ -97,8 +106,10 @@ export default function UserPicksPage() {
       }
     }
 
-    fetchData()
-  }, [groupId, userId, router])
+    if (groupId && userId) {
+      fetchData()
+    }
+  }, [groupId, userId, router, week, season])
 
   const handleBackToGroup = () => {
     router.push(`/groups/${groupId}`)
