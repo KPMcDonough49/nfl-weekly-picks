@@ -241,117 +241,128 @@ export default function GroupSummaryPage() {
         )}
       </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Games and Picks */}
-          <div className="lg:col-span-2">
-            <h2 className="text-xl font-semibold mb-4">This Week's Games</h2>
-            <div className="space-y-4">
-              {picksWithResults.map((game) => (
+        {/* Games Grid - Horizontal Layout */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4">This Week's Games</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {picksWithResults.map((game) => {
+              const gameTime = new Date(game.gameTime)
+              const gameStarted = new Date() > gameTime
+              
+              return (
                 <div key={game.id} className="card">
-                  <div className="flex justify-between items-center mb-4">
-                    <div className="text-center flex-1">
-                      <div className="text-sm text-gray-600 mb-1">
-                        {new Date(game.gameTime).toLocaleDateString()} at{' '}
-                        {new Date(game.gameTime).toLocaleTimeString([], { 
-                          hour: 'numeric', 
-                          minute: '2-digit' 
-                        })}
-                      </div>
-                      <div className="text-lg font-semibold text-gray-900">
-                        {game.awayTeam} @ {game.homeTeam}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        Spread: {game.awayTeam} {game.spread && game.spread > 0 ? `+${game.spread}` : game.spread} | {game.homeTeam} {game.spread && game.spread < 0 ? game.spread : (game.spread ? `+${Math.abs(game.spread)}` : 'PK')}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        O/U: {game.overUnder}
-                      </div>
-                      {game.status === 'final' && game.homeScore !== null && game.awayScore !== null && (
-                        <div className="text-lg font-bold text-nfl-blue mt-2">
-                          Final: {game.awayTeam} {game.awayScore} - {game.homeTeam} {game.homeScore}
-                        </div>
-                      )}
+                  {/* Game Header */}
+                  <div className="text-center mb-3">
+                    <div className="text-xs text-gray-500 mb-1">
+                      {gameTime.toLocaleDateString()} {gameTime.toLocaleTimeString([], { 
+                        hour: 'numeric', 
+                        minute: '2-digit' 
+                      })}
                     </div>
+                    <div className="font-semibold text-sm text-gray-900 mb-1">
+                      {game.awayTeam} @ {game.homeTeam}
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      {game.awayTeam} {game.spread && game.spread > 0 ? `+${game.spread}` : game.spread} | {game.homeTeam} {game.spread && game.spread < 0 ? game.spread : (game.spread ? `+${Math.abs(game.spread)}` : 'PK')}
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      O/U: {game.overUnder}
+                    </div>
+                    {game.status === 'final' && game.homeScore !== null && game.awayScore !== null && (
+                      <div className="text-sm font-bold text-nfl-blue mt-1">
+                        {game.awayTeam} {game.awayScore} - {game.homeTeam} {game.homeScore}
+                      </div>
+                    )}
                   </div>
 
                   {/* Picks for this game */}
-                  <div className="space-y-2">
-                    {game.picks.map((pick) => (
-                      <div key={pick.memberId} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                        <div className="flex items-center">
-                          <span className="font-medium text-sm w-20 truncate">
-                            {pick.memberName}
-                          </span>
-                          {pick.pick && (
-                            <span className="text-sm text-gray-600 ml-2">
-                              {pick.pick}
-                              {pick.confidence && (
-                                <span className="ml-1 text-xs text-gray-500">
-                                  ({pick.confidence})
-                                </span>
-                              )}
+                  <div className="space-y-1">
+                    {game.picks.map((pick) => {
+                      const isCurrentUser = pick.memberId === currentUserId
+                      const shouldShowPick = isCurrentUser || gameStarted
+                      
+                      return (
+                        <div key={pick.memberId} className="flex items-center justify-between p-1 bg-gray-50 rounded text-xs">
+                          <div className="flex items-center">
+                            <span className="font-medium w-16 truncate">
+                              {pick.memberName}
                             </span>
-                          )}
+                            {shouldShowPick && pick.pick && (
+                              <span className="text-gray-600 ml-1">
+                                {pick.pick}
+                                {pick.confidence && (
+                                  <span className="ml-1 text-gray-500">
+                                    ({pick.confidence})
+                                  </span>
+                                )}
+                              </span>
+                            )}
+                            {!shouldShowPick && (
+                              <span className="text-gray-400 ml-1">
+                                ???
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center">
+                            {shouldShowPick && pick.pick && pick.result && (
+                              <>
+                                {pick.result === 'correct' && (
+                                  <CheckCircleIcon className="h-4 w-4 text-green-500" />
+                                )}
+                                {pick.result === 'incorrect' && (
+                                  <XCircleIcon className="h-4 w-4 text-red-500" />
+                                )}
+                                {pick.result === 'tie' && (
+                                  <MinusCircleIcon className="h-4 w-4 text-yellow-500" />
+                                )}
+                                {pick.result === 'pending' && (
+                                  <div className="h-4 w-4 rounded-full bg-gray-300" />
+                                )}
+                              </>
+                            )}
+                            {isCurrentUser && (
+                              <span className="ml-1 text-xs text-nfl-blue font-medium">(You)</span>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center">
-                          {pick.pick && pick.result && (
-                            <>
-                              {pick.result === 'correct' && (
-                                <CheckCircleIcon className="h-5 w-5 text-green-500" />
-                              )}
-                              {pick.result === 'incorrect' && (
-                                <XCircleIcon className="h-5 w-5 text-red-500" />
-                              )}
-                              {pick.result === 'tie' && (
-                                <MinusCircleIcon className="h-5 w-5 text-yellow-500" />
-                              )}
-                              {pick.result === 'pending' && (
-                                <div className="h-5 w-5 rounded-full bg-gray-300" />
-                              )}
-                            </>
-                          )}
-                          {pick.memberId === currentUserId && (
-                            <span className="ml-2 text-xs text-nfl-blue font-medium">(You)</span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
-              ))}
-            </div>
+              )
+            })}
           </div>
+        </div>
 
-          {/* Members Summary */}
-          <div className="lg:col-span-1">
-            <h2 className="text-xl font-semibold mb-4">Group Members</h2>
-            <div className="space-y-3">
-              {membersWithPicks.map((member) => (
-                <div 
-                  key={member.id} 
-                  className={`card ${member.id === currentUserId ? 'ring-2 ring-nfl-blue' : ''}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-semibold text-gray-900">
-                        {member.name}
-                        {member.id === currentUserId && (
-                          <span className="ml-2 text-sm text-nfl-blue font-medium">(You)</span>
-                        )}
-                      </h3>
-                      <div className="text-sm text-gray-600">
-                        {member.wins}-{member.losses}-{member.ties}
-                      </div>
+        {/* Members Summary */}
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Group Members</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {membersWithPicks.map((member) => (
+              <div 
+                key={member.id} 
+                className={`card ${member.id === currentUserId ? 'ring-2 ring-nfl-blue' : ''}`}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-gray-900">
+                      {member.name}
+                      {member.id === currentUserId && (
+                        <span className="ml-2 text-sm text-nfl-blue font-medium">(You)</span>
+                      )}
+                    </h3>
+                    <div className="text-sm text-gray-600">
+                      {member.wins}-{member.losses}-{member.ties}
                     </div>
-                    <div className="text-right">
-                      <div className="text-sm text-gray-500">
-                        {member.picks.length} picks
-                      </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-gray-500">
+                      {member.picks.length} picks
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
