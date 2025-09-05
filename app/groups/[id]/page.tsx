@@ -14,6 +14,8 @@ interface Game {
   overUnder: number
   gameTime: string
   status: string
+  homeScore?: number | null
+  awayScore?: number | null
   userPick?: string
 }
 
