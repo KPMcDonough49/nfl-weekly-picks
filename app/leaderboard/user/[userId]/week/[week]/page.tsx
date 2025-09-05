@@ -122,7 +122,7 @@ export default async function UserPicksPage({
     })
     
     // Grade each pick and create picks with results
-    const picksWithResults: Pick[] = picks.map(pick => {
+    const picksWithResults = picks.map(pick => {
       const game = games.find(g => g.id === pick.gameId)
       if (!game) return null
 
@@ -133,7 +133,10 @@ export default async function UserPicksPage({
         pick: pick.pick,
         confidence: pick.confidence,
         result: result,
-        game: game
+        game: {
+          ...game,
+          gameTime: game.gameTime.toISOString() // Convert Date to string
+        }
       }
     }).filter(Boolean) as Pick[]
     
