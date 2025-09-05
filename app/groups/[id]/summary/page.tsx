@@ -134,7 +134,9 @@ export default async function GroupSummaryPage({
     const now = new Date()
     const picksLocked = false // No global lock anymore
     
-    const currentUserId = 'demo-user'
+    // Note: This is a server component, so we can't use useAuth here
+    // The currentUserId will be determined on the client side
+    const currentUserId = 'demo-user' // This will be overridden by client-side auth
     
     // Fetch all picks and weekly scores in bulk to avoid N+1 queries
     const [allPicks, allWeeklyScores] = await Promise.all([

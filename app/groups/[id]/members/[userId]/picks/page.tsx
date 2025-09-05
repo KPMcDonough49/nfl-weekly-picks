@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { UserGroupIcon, UserIcon, ArrowLeftIcon, LockClosedIcon } from '@heroicons/react/24/outline'
+import { useAuth } from '@/lib/auth-context'
 
 interface Game {
   homeTeam: string
@@ -32,6 +33,7 @@ interface User {
 export default function UserPicksPage() {
   const params = useParams()
   const router = useRouter()
+  const { user: currentUser } = useAuth()
   const groupId = params.id as string
   const userId = params.userId as string
   
@@ -46,9 +48,8 @@ export default function UserPicksPage() {
   const [pendingPicks, setPendingPicks] = useState<{[gameId: string]: string}>({})
   const [hasChanges, setHasChanges] = useState(false)
   
-  // Current user ID (for demo purposes)
-  const currentUserId = 'demo-user'
-  const canEdit = userId === currentUserId
+  // Check if current user can edit these picks
+  const canEdit = currentUser && userId === currentUser.id
 
   // Helper function to format spreads correctly
   const formatSpread = (spread: number, isHome: boolean) => {

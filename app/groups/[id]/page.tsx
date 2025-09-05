@@ -212,7 +212,7 @@ export default function GroupDetail() {
   }
 
   const handleUserClick = (userId: string, hasPicks: boolean) => {
-    if (userId === 'demo-user') {
+    if (user && userId === user.id) {
       // Current user - go to picks or summary
       if (hasPicks) {
         setViewMode('summary')
@@ -328,7 +328,7 @@ export default function GroupDetail() {
                 <div 
                   key={member.id} 
                   className={`card cursor-pointer transition-all hover:shadow-lg ${
-                    member.id === 'demo-user' ? 'ring-2 ring-nfl-blue' : ''
+                    user && member.id === user.id ? 'ring-2 ring-nfl-blue' : ''
                   }`}
                   onClick={() => handleUserClick(member.id, member.hasPicks || false)}
                 >
@@ -338,7 +338,7 @@ export default function GroupDetail() {
                       <div>
                         <h3 className="text-lg font-semibold text-gray-900">
                           {member.name}
-                          {member.id === 'demo-user' && (
+                          {user && member.id === user.id && (
                             <span className="ml-2 text-sm text-nfl-blue font-medium">(You)</span>
                           )}
                         </h3>
@@ -392,8 +392,9 @@ export default function GroupDetail() {
               <h3 className="text-lg font-semibold mb-3">Quick Actions</h3>
               <div className="space-y-2">
                 <button 
-                  onClick={() => handleUserClick('demo-user', false)}
+                  onClick={() => user && handleUserClick(user.id, false)}
                   className="w-full btn-primary text-sm"
+                  disabled={!user}
                 >
                   Make My Picks
                 </button>
