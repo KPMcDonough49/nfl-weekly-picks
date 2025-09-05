@@ -288,13 +288,8 @@ export default function GroupSummaryPage() {
                               {pick.memberName}
                             </span>
                             {shouldShowPick && pick.pick && (
-                              <span className="text-gray-600 ml-1">
+                              <span className="text-gray-600 ml-1 text-sm">
                                 {pick.pick}
-                                {pick.confidence && (
-                                  <span className="ml-1 text-gray-500">
-                                    ({pick.confidence})
-                                  </span>
-                                )}
                               </span>
                             )}
                             {!shouldShowPick && (
