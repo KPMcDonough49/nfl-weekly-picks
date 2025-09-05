@@ -30,7 +30,7 @@ interface Pick {
 
 // Helper function to grade picks (same logic as in score-picks.js)
 const gradePick = (pick: Pick, game: Game): string => {
-  if (game.status !== 'final' || game.homeScore === null || game.awayScore === null) {
+  if (game.status !== 'final' || game.homeScore === null || game.homeScore === undefined || game.awayScore === null || game.awayScore === undefined) {
     return 'pending'
   }
 
