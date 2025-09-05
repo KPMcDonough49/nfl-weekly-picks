@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeftIcon, LockClosedIcon, CheckCircleIcon, XCircleIcon, MinusCircleIcon } from '@heroicons/react/24/outline'
-import { getCurrentSeasonAndWeek } from '@/lib/nfl-api'
+import { getCurrentSeasonAndWeek } from '@/lib/client-utils'
 
 interface Game {
   id: string
@@ -178,7 +178,7 @@ export default function GroupSummaryPage() {
     const weeklyScore = scoresByUser[member.id]
 
     // Grade each pick
-    const picksWithResults = picks.map(pick => {
+    const picksWithResults = picks.map((pick: any) => {
       const game = games.find(g => g.id === pick.gameId)
       if (!game) return null
 
