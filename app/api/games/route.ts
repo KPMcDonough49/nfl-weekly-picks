@@ -20,43 +20,74 @@ export async function GET(request: NextRequest) {
       targetSeason = current.season
     }
 
-    const games = await fetchGamesForWeek(targetWeek, targetSeason)
+    // First, try to get games from database
+    let games = await prisma.game.findMany({
+      where: {
+        week: targetWeek,
+        season: targetSeason
+      },
+      orderBy: { gameTime: 'asc' }
+    })
 
-    // Store games in database for picks to reference
-    try {
-      for (const game of games) {
-        const result = await prisma.game.upsert({
-          where: { 
-            id: game.id // Use the game ID directly since we removed the unique constraint
-          },
-          update: {
+    // If no games found in database, fetch from API and store them
+    if (games.length === 0) {
+      console.log(`No games found in database for Week ${targetWeek}, fetching from API...`)
+      const apiGames = await fetchGamesForWeek(targetWeek, targetSeason)
+
+      // Store games in database for picks to reference
+      try {
+        for (const game of apiGames) {
+          const result = await prisma.game.upsert({
+            where: { 
+              id: game.id // Use the game ID directly since we removed the unique constraint
+            },
+            update: {
+              week: targetWeek,
+              season: targetSeason,
+              homeTeam: game.homeTeam,
+              awayTeam: game.awayTeam,
+              spread: game.spread,
+              overUnder: game.overUnder,
+              gameTime: game.gameTime,
+              status: game.status
+              // Removed groupId since games are global
+            },
+            create: {
+              id: game.id,
+              week: targetWeek,
+              season: targetSeason,
+              homeTeam: game.homeTeam,
+              awayTeam: game.awayTeam,
+              spread: game.spread,
+              overUnder: game.overUnder,
+              gameTime: game.gameTime,
+              status: game.status
+              // Removed groupId since games are global
+            }
+          })
+        }
+        console.log(`Stored ${apiGames.length} games in database`)
+        // Re-fetch from database to get the proper type
+        games = await prisma.game.findMany({
+          where: {
             week: targetWeek,
-            season: targetSeason,
-            homeTeam: game.homeTeam,
-            awayTeam: game.awayTeam,
-            spread: game.spread,
-            overUnder: game.overUnder,
-            gameTime: game.gameTime,
-            status: game.status
-            // Removed groupId since games are global
+            season: targetSeason
           },
-          create: {
-            id: game.id,
+          orderBy: { gameTime: 'asc' }
+        })
+      } catch (error) {
+        console.error('Error storing games in database:', error)
+        // Re-fetch from database to get the proper type
+        games = await prisma.game.findMany({
+          where: {
             week: targetWeek,
-            season: targetSeason,
-            homeTeam: game.homeTeam,
-            awayTeam: game.awayTeam,
-            spread: game.spread,
-            overUnder: game.overUnder,
-            gameTime: game.gameTime,
-            status: game.status
-            // Removed groupId since games are global
-          }
+            season: targetSeason
+          },
+          orderBy: { gameTime: 'asc' }
         })
       }
-      console.log(`Stored ${games.length} games in database`)
-    } catch (error) {
-      console.error('Error storing games in database:', error)
+    } else {
+      console.log(`Found ${games.length} games in database for Week ${targetWeek}`)
     }
 
     return NextResponse.json({

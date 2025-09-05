@@ -6,8 +6,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
@@ -89,6 +89,7 @@ model Pick {
   groupId   String
   pick      String   // home, away, over, under
   confidence Int?     // 1-5 confidence level
+  result    String?  // correct, incorrect, tie, pending
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

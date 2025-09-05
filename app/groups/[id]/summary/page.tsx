@@ -1,6 +1,7 @@
 import { ArrowLeftIcon, LockClosedIcon, CheckCircleIcon, XCircleIcon, MinusCircleIcon } from '@heroicons/react/24/outline'
 import { prisma } from '@/lib/db'
 import { notFound } from 'next/navigation'
+import { getCurrentSeasonAndWeek } from '@/lib/nfl-api'
 
 interface Game {
   id: string
@@ -43,27 +44,38 @@ const gradePick = (pick: any, game: any): 'correct' | 'incorrect' | 'tie' | 'pen
     return 'pending'
   }
 
-  const homeTeamWon = homeScore > awayScore
-  const awayTeamWon = awayScore > homeScore
-  const tied = homeScore === awayScore
-
-  // Calculate total points
+  // Calculate total points for over/under
   const totalPoints = homeScore + awayScore
-  const overUnderResult = totalPoints > overUnder ? 'over' : 'under'
-
-  // Grade the pick
-  if (pickType === 'home') {
-    if (tied) return 'tie'
-    return homeTeamWon ? 'correct' : 'incorrect'
-  } else if (pickType === 'away') {
-    if (tied) return 'tie'
-    return awayTeamWon ? 'correct' : 'incorrect'
-  } else if (pickType === 'over') {
+  
+  // Handle over/under picks
+  if (pickType === 'over') {
     if (totalPoints === overUnder) return 'tie'
-    return overUnderResult === 'over' ? 'correct' : 'incorrect'
+    return totalPoints > overUnder ? 'correct' : 'incorrect'
   } else if (pickType === 'under') {
     if (totalPoints === overUnder) return 'tie'
-    return overUnderResult === 'under' ? 'correct' : 'incorrect'
+    return totalPoints < overUnder ? 'correct' : 'incorrect'
+  }
+  
+  // Handle spread picks (home/away)
+  // The spread represents how many points the home team is favored by
+  // Negative spread = home team is favored by that many points
+  // Positive spread = away team is favored by that many points
+  
+  const actualMargin = homeScore - awayScore
+  const homeTeamSpread = Math.abs(spread || 0) // How many points home team is favored by (absolute value)
+  
+  if (pickType === 'home') {
+    // User picked the home team
+    // Home team covers if they win by MORE than the spread
+    // Example: Eagles favored by 8.5, they need to win by 9+ to cover
+    if (actualMargin === homeTeamSpread) return 'tie'
+    return actualMargin > homeTeamSpread ? 'correct' : 'incorrect'
+  } else if (pickType === 'away') {
+    // User picked the away team  
+    // Away team covers if they either win OR lose by less than the spread
+    // Example: Eagles favored by 8.5, Cowboys cover if they lose by 8 or less
+    if (actualMargin === homeTeamSpread) return 'tie'
+    return actualMargin < homeTeamSpread ? 'correct' : 'incorrect'
   }
 
   return 'pending'
@@ -75,6 +87,7 @@ export default async function GroupSummaryPage({
   params: { id: string }
 }) {
   const groupId = params.id
+  const { week: currentWeek, season: currentSeason } = getCurrentSeasonAndWeek()
   
   try {
     // Fetch data on the server side
@@ -94,7 +107,9 @@ export default async function GroupSummaryPage({
             not: {
               in: ['test-game-1', 'test-game-2', 'test-scoring-game']
             }
-          }
+          },
+          week: currentWeek,
+          season: currentSeason
         },
         orderBy: { gameTime: 'asc' }
       }),
@@ -121,54 +136,77 @@ export default async function GroupSummaryPage({
     
     const currentUserId = 'demo-user'
     
-    // Fetch picks for each member with results
-    const membersWithPicks = await Promise.all(
-      members.map(async (member) => {
-        const picks = await prisma.pick.findMany({
-          where: {
-            userId: member.id,
-            groupId
-          }
-        })
-
-        // Get weekly score if it exists
-        const weeklyScore = await prisma.weeklyScore.findFirst({
-          where: {
-            userId: member.id,
-            groupId,
-            week: 1, // Current week
-            season: 2025
-          }
-        })
-
-        // Grade each pick
-        const picksWithResults = picks.map(pick => {
-          const game = games.find(g => g.id === pick.gameId)
-          if (!game) return null
-
-          const result = gradePick(pick, game)
-          return {
-            id: pick.id,
-            gameId: pick.gameId,
-            pick: pick.pick,
-            confidence: pick.confidence,
-            result: result,
-            game: game
-          }
-        }).filter(Boolean)
-
-        return {
-          id: member.id,
-          name: member.name,
-          firstName: member.name.split(' ')[0] || member.name,
-          lastName: member.name.split(' ').slice(1).join(' ') || '',
-          wins: weeklyScore?.wins || 0,
-          losses: weeklyScore?.losses || 0,
-          ties: weeklyScore?.ties || 0,
-          picks: picksWithResults
+    // Fetch all picks and weekly scores in bulk to avoid N+1 queries
+    const [allPicks, allWeeklyScores] = await Promise.all([
+      prisma.pick.findMany({
+        where: {
+          userId: { in: members.map(m => m.id) },
+          groupId
+        },
+        select: {
+          id: true,
+          userId: true,
+          gameId: true,
+          pick: true,
+          confidence: true,
+          result: true
+        }
+      }),
+      prisma.weeklyScore.findMany({
+        where: {
+          userId: { in: members.map(m => m.id) },
+          groupId,
+          week: currentWeek,
+          season: currentSeason
         }
       })
-    )
+    ])
+
+    // Group picks and scores by user ID
+    const picksByUser = allPicks.reduce((acc, pick) => {
+      if (!acc[pick.userId]) acc[pick.userId] = []
+      acc[pick.userId].push(pick)
+      return acc
+    }, {} as Record<string, any[]>)
+
+    const scoresByUser = allWeeklyScores.reduce((acc, score) => {
+      acc[score.userId] = score
+      return acc
+    }, {} as Record<string, any>)
+
+    // Process each member
+    const membersWithPicks = members.map(member => {
+      const picks = picksByUser[member.id] || []
+      const weeklyScore = scoresByUser[member.id]
+
+      // Grade each pick
+      const picksWithResults = picks.map(pick => {
+        const game = games.find(g => g.id === pick.gameId)
+        if (!game) return null
+
+        // Use the stored result from the database, or calculate if not available
+        const result = pick.result || gradePick(pick, game)
+        return {
+          id: pick.id,
+          gameId: pick.gameId,
+          pick: pick.pick,
+          confidence: pick.confidence,
+          result: result,
+          game: game
+        }
+      }).filter(Boolean)
+
+      return {
+        id: member.id,
+        name: member.name,
+        firstName: member.name.split(' ')[0] || member.name,
+        lastName: member.name.split(' ').slice(1).join(' ') || '',
+        wins: weeklyScore?.wins || 0,
+        losses: weeklyScore?.losses || 0,
+        ties: weeklyScore?.ties || 0,
+        picks: picksWithResults
+      }
+    })
     
     const formatSpread = (spread: number | null, isHome: boolean) => {
       if (!spread) return 'N/A'

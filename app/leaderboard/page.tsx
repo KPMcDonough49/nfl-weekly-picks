@@ -246,9 +246,12 @@ export default function LeaderboardPage() {
                         {score.user.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
+                        <a 
+                          href={`/leaderboard/user/${score.user.id}/week/${selectedWeek}?groupId=${score.group.id}`}
+                          className="text-lg font-semibold text-gray-900 hover:text-nfl-blue transition-colors cursor-pointer"
+                        >
                           {score.user.name}
-                        </h3>
+                        </a>
                         <p className="text-sm text-gray-600">
                           {score.group.name}
                         </p>
@@ -279,9 +282,12 @@ export default function LeaderboardPage() {
         <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Top Performer</h3>
-            <p className="text-2xl font-bold text-yellow-600">
+            <a 
+              href={`/leaderboard/user/${scores[0]?.user.id}/week/${selectedWeek}?groupId=${scores[0]?.group.id}`}
+              className="text-2xl font-bold text-yellow-600 hover:text-yellow-700 transition-colors cursor-pointer"
+            >
               {scores[0]?.user.name}
-            </p>
+            </a>
             <p className="text-sm text-gray-600">
               {scores[0]?.wins}-{scores[0]?.losses}-{scores[0]?.ties} record
             </p>
@@ -293,7 +299,12 @@ export default function LeaderboardPage() {
               {Math.max(...scores.map(s => s.totalPicks))}
             </p>
             <p className="text-sm text-gray-600">
-              by {scores.find(s => s.totalPicks === Math.max(...scores.map(s => s.totalPicks)))?.user.name}
+              by <a 
+                href={`/leaderboard/user/${scores.find(s => s.totalPicks === Math.max(...scores.map(s => s.totalPicks)))?.user.id}/week/${selectedWeek}?groupId=${scores.find(s => s.totalPicks === Math.max(...scores.map(s => s.totalPicks)))?.group.id}`}
+                className="hover:text-nfl-blue transition-colors cursor-pointer"
+              >
+                {scores.find(s => s.totalPicks === Math.max(...scores.map(s => s.totalPicks)))?.user.name}
+              </a>
             </p>
           </div>
           

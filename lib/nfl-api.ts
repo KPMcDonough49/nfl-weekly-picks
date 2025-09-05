@@ -117,15 +117,34 @@ function transformAPIDataToGames(oddsData: any[], week: number, season: number):
   })
 }
 
-// Mock function to get current NFL season and week
+// Function to get current NFL season and week
 export function getCurrentSeasonAndWeek(): { season: number; week: number } {
   const now = new Date()
   const year = now.getFullYear()
   
   // NFL season typically starts in September
-  // This is a simplified calculation - in production you'd want more accurate logic
   if (now.getMonth() >= 8) { // September or later
-    return { season: year, week: Math.min(18, Math.max(1, Math.floor((now.getTime() - new Date(year, 8, 1).getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1)) }
+    // NFL Week 1 typically starts on the first Thursday of September
+    // For 2025, let's assume Week 1 starts September 4th (Thursday)
+    const seasonStart = new Date(year, 8, 4) // September 4th, 2025
+    
+    // Calculate days since season start
+    const daysSinceStart = Math.floor((now.getTime() - seasonStart.getTime()) / (24 * 60 * 60 * 1000))
+    
+    // NFL weeks run Thursday to Monday (5 days), then Tuesday-Wednesday are "off days"
+    // So we need to account for the 5-day week cycle
+    if (daysSinceStart < 0) {
+      // Before season starts
+      return { season: year - 1, week: 18 }
+    } else if (daysSinceStart < 5) {
+      // Week 1 (Thursday to Monday)
+      return { season: year, week: 1 }
+    } else {
+      // Calculate which week we're in
+      // Each week is 7 days, but we need to account for the Thursday start
+      const weekNumber = Math.floor((daysSinceStart - 5) / 7) + 2
+      return { season: year, week: Math.min(18, Math.max(1, weekNumber)) }
+    }
   } else {
     return { season: year - 1, week: 18 } // Previous season
   }
@@ -165,17 +184,30 @@ export async function fetchGamesForWeek(week: number, season: number): Promise<N
   }
 
   try {
-    // Calculate the current NFL week's date range (Thursday to Monday)
-    const now = new Date()
-    const currentWeekStart = getWeekStartDate(now)
-    const currentWeekEnd = new Date(currentWeekStart)
-    currentWeekEnd.setDate(currentWeekEnd.getDate() + 5) // Thursday to Monday (5 days)
+    // Calculate the requested NFL week's date range (Thursday to Monday)
+    // NFL Week 1 starts September 4th, 2025 (Thursday)
+    const seasonStart = new Date(season, 8, 4) // September 4th
+    
+    // Calculate the start date for the requested week
+    let weekStartDate
+    if (week === 1) {
+      weekStartDate = seasonStart
+    } else {
+      // Each week after Week 1 starts 7 days after the previous week
+      const daysToAdd = (week - 1) * 7
+      weekStartDate = new Date(seasonStart)
+      weekStartDate.setDate(seasonStart.getDate() + daysToAdd)
+    }
+    
+    // Week runs Thursday to Monday (5 days)
+    const weekEndDate = new Date(weekStartDate)
+    weekEndDate.setDate(weekStartDate.getDate() + 5)
     
     // Format dates for API (ISO format)
-    const startDate = currentWeekStart.toISOString().split('T')[0]
-    const endDate = currentWeekEnd.toISOString().split('T')[0]
+    const startDate = weekStartDate.toISOString().split('T')[0]
+    const endDate = weekEndDate.toISOString().split('T')[0]
     
-    console.log(`Fetching NFL games for current week: ${startDate} to ${endDate}`)
+    console.log(`Fetching NFL games for Week ${week}: ${startDate} to ${endDate}`)
     
     // Fetch NFL odds from The Odds API for current week only (Thursday to Monday)
     const response = await fetch(
@@ -330,4 +362,171 @@ export function getTimeUntilPicksLock(): string {
   } else {
     return `${minutes}m`
   }
+}
+
+// ESPN API integration for real-time scores
+export interface ESPNGame {
+  id: string
+  name: string
+  shortName: string
+  status: {
+    type: {
+      name: string
+      state: string
+      completed: boolean
+    }
+  }
+  competitions: Array<{
+    competitors: Array<{
+      id: string
+      homeAway: 'home' | 'away'
+      team: {
+        id: string
+        abbreviation: string
+        displayName: string
+      }
+      score: string
+    }>
+  }>
+}
+
+// Function to fetch real-time game scores from ESPN API
+export async function fetchESPNGameScores(): Promise<ESPNGame[]> {
+  try {
+    console.log('Fetching real-time game scores from ESPN API...')
+    
+    const response = await fetch('https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard', {
+      headers: {
+        'Accept': 'application/json',
+      },
+      signal: AbortSignal.timeout(10000) // 10 second timeout
+    })
+
+    if (!response.ok) {
+      throw new Error(`ESPN API request failed: ${response.status}`)
+    }
+
+    const data = await response.json()
+    const games = data.events || []
+    
+    console.log(`Fetched ${games.length} games from ESPN API`)
+    return games
+  } catch (error) {
+    console.error('Error fetching ESPN game scores:', error)
+    return []
+  }
+}
+
+// Function to update game scores in database using ESPN data
+export async function updateGameScoresFromESPN(): Promise<{ updated: number; errors: number }> {
+  const { PrismaClient } = await import('@prisma/client')
+  const prisma = new PrismaClient()
+  
+  let updated = 0
+  let errors = 0
+  
+  try {
+    const espnGames = await fetchESPNGameScores()
+    
+    for (const espnGame of espnGames) {
+      try {
+        const competition = espnGame.competitions[0]
+        if (!competition) continue
+        
+        const homeTeam = competition.competitors.find(c => c.homeAway === 'home')
+        const awayTeam = competition.competitors.find(c => c.homeAway === 'away')
+        
+        if (!homeTeam || !awayTeam) continue
+        
+        // Map ESPN team abbreviations to our team names
+        const teamMapping: { [key: string]: string } = {
+          'DAL': 'Cowboys',
+          'PHI': 'Eagles',
+          'KC': 'Chiefs',
+          'BUF': 'Bills',
+          'LAR': 'Rams',
+          'SF': '49ers',
+          'NE': 'Patriots',
+          'NYJ': 'Jets',
+          'MIA': 'Dolphins',
+          'PIT': 'Steelers',
+          'BAL': 'Ravens',
+          'CLE': 'Browns',
+          'CIN': 'Bengals',
+          'TEN': 'Titans',
+          'IND': 'Colts',
+          'JAX': 'Jaguars',
+          'HOU': 'Texans',
+          'DEN': 'Broncos',
+          'LAC': 'Chargers',
+          'LV': 'Raiders',
+          'NYG': 'Giants',
+          'WAS': 'Commanders',
+          'GB': 'Packers',
+          'MIN': 'Vikings',
+          'CHI': 'Bears',
+          'DET': 'Lions',
+          'ATL': 'Falcons',
+          'NO': 'Saints',
+          'CAR': 'Panthers',
+          'TB': 'Buccaneers',
+          'ARI': 'Cardinals'
+        }
+        
+        const homeTeamName = teamMapping[homeTeam.team.abbreviation] || homeTeam.team.displayName
+        const awayTeamName = teamMapping[awayTeam.team.abbreviation] || awayTeam.team.displayName
+        
+        // Find the game in our database
+        const game = await prisma.game.findFirst({
+          where: {
+            homeTeam: homeTeamName,
+            awayTeam: awayTeamName,
+            week: 1, // For now, assume Week 1
+            season: 2025
+          }
+        })
+        
+        if (!game) {
+          console.log(`Game not found in database: ${awayTeamName} @ ${homeTeamName}`)
+          continue
+        }
+        
+        // Determine game status
+        let gameStatus: 'scheduled' | 'in_progress' | 'final' = 'scheduled'
+        if (espnGame.status.type.name === 'STATUS_FINAL') {
+          gameStatus = 'final'
+        } else if (espnGame.status.type.name === 'STATUS_IN_PROGRESS') {
+          gameStatus = 'in_progress'
+        }
+        
+        // Update the game with new scores and status
+        const homeScore = parseInt(homeTeam.score) || 0
+        const awayScore = parseInt(awayTeam.score) || 0
+        
+        await prisma.game.update({
+          where: { id: game.id },
+          data: {
+            status: gameStatus,
+            homeScore: homeScore,
+            awayScore: awayScore
+          }
+        })
+        
+        console.log(`Updated game: ${awayTeamName} @ ${homeTeamName} - ${awayScore}-${homeScore} (${gameStatus})`)
+        updated++
+        
+      } catch (error) {
+        console.error(`Error updating game ${espnGame.name}:`, error)
+        errors++
+      }
+    }
+    
+  } catch (error) {
+    console.error('Error in updateGameScoresFromESPN:', error)
+    errors++
+  } finally {
+    await prisma.$disconnect()
+  }
+  
+  return { updated, errors }
 }

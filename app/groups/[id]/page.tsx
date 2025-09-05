@@ -33,7 +33,7 @@ export default function GroupDetail() {
   const [members, setMembers] = useState<Member[]>([])
   const [groupName, setGroupName] = useState('')
   const [groupCreatedBy, setGroupCreatedBy] = useState('')
-  const [currentWeek, setCurrentWeek] = useState(12)
+  const [currentWeek, setCurrentWeek] = useState(1)
   const [loading, setLoading] = useState(true)
   const [picksLocked, setPicksLocked] = useState(false)
   const [viewMode, setViewMode] = useState<'members' | 'picks' | 'summary' | 'pastWeeks'>('members')
@@ -136,7 +136,7 @@ export default function GroupDetail() {
     setTimeout(() => {
       setLoading(false)
     }, 5000)
-  }, [groupId])
+  }, [groupId, currentWeek])
 
   // Helper function to check if a specific game has started
   const isGameLocked = (gameId: string) => {

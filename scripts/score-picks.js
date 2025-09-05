@@ -9,11 +9,35 @@ const { PrismaClient } = require('@prisma/client')
 
 const prisma = new PrismaClient()
 
+// ESPN API integration will be handled separately
+
 async function scorePicks() {
   try {
     const now = new Date()
-    const currentWeek = 1 // You might want to calculate this dynamically
-    const currentSeason = 2025
+    const year = now.getFullYear()
+    
+    // NFL Week 1 typically starts on the first Thursday of September
+    // For 2025, let's assume Week 1 starts September 4th (Thursday)
+    const seasonStart = new Date(year, 8, 4) // September 4th, 2025
+    
+    // Calculate days since season start
+    const daysSinceStart = Math.floor((now.getTime() - seasonStart.getTime()) / (24 * 60 * 60 * 1000))
+    
+    let currentWeek, currentSeason
+    if (daysSinceStart < 0) {
+      // Before season starts
+      currentSeason = year - 1
+      currentWeek = 18
+    } else if (daysSinceStart < 5) {
+      // Week 1 (Thursday to Monday)
+      currentSeason = year
+      currentWeek = 1
+    } else {
+      // Calculate which week we're in
+      const weekNumber = Math.floor((daysSinceStart - 5) / 7) + 2
+      currentSeason = year
+      currentWeek = Math.min(18, Math.max(1, weekNumber))
+    }
     
     // Determine scoring phase based on current time
     const phase = getScoringPhase(now)
@@ -22,6 +46,9 @@ async function scorePicks() {
     console.log(`📅 Phase: ${phase.name}`)
     console.log(`⏰ Time: ${now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' })} PT`)
     console.log(`📊 Week ${currentWeek}, Season ${currentSeason}`)
+    
+    // Note: Game scores should be updated from ESPN API before running this script
+    console.log('ℹ️  Make sure to run update-scores-from-espn.js first to get latest scores')
     
     // Get all completed games for this week
     const completedGames = await prisma.game.findMany({
@@ -63,6 +90,12 @@ async function scorePicks() {
       if (!game || !game.homeScore || !game.awayScore) continue
       
       const result = gradePick(pick, game)
+      
+      // Update the pick result
+      await prisma.pick.update({
+        where: { id: pick.id },
+        data: { result: result }
+      })
       
       if (result !== 'pending') {
         // Update weekly score
@@ -145,27 +178,38 @@ function gradePick(pick, game) {
   const { pick: pickType } = pick
   const { homeScore, awayScore, spread, overUnder } = game
   
-  const homeTeamWon = homeScore > awayScore
-  const awayTeamWon = awayScore > homeScore
-  const tied = homeScore === awayScore
-  
-  // Calculate total points
+  // Calculate total points for over/under
   const totalPoints = homeScore + awayScore
-  const overUnderResult = totalPoints > overUnder ? 'over' : 'under'
   
-  // Grade the pick
-  if (pickType === 'home') {
-    if (tied) return 'tie'
-    return homeTeamWon ? 'correct' : 'incorrect'
-  } else if (pickType === 'away') {
-    if (tied) return 'tie'
-    return awayTeamWon ? 'correct' : 'incorrect'
-  } else if (pickType === 'over') {
+  // Handle over/under picks
+  if (pickType === 'over') {
     if (totalPoints === overUnder) return 'tie'
-    return overUnderResult === 'over' ? 'correct' : 'incorrect'
+    return totalPoints > overUnder ? 'correct' : 'incorrect'
   } else if (pickType === 'under') {
     if (totalPoints === overUnder) return 'tie'
-    return overUnderResult === 'under' ? 'correct' : 'incorrect'
+    return totalPoints < overUnder ? 'correct' : 'incorrect'
+  }
+  
+  // Handle spread picks (home/away)
+  // The spread represents how many points the home team is favored by
+  // Negative spread = home team is favored by that many points
+  // Positive spread = away team is favored by that many points
+  
+  const actualMargin = homeScore - awayScore
+  const homeTeamSpread = Math.abs(spread || 0) // How many points home team is favored by (absolute value)
+  
+  if (pickType === 'home') {
+    // User picked the home team
+    // Home team covers if they win by MORE than the spread
+    // Example: Eagles favored by 8.5, they need to win by 9+ to cover
+    if (actualMargin === homeTeamSpread) return 'tie'
+    return actualMargin > homeTeamSpread ? 'correct' : 'incorrect'
+  } else if (pickType === 'away') {
+    // User picked the away team  
+    // Away team covers if they either win OR lose by less than the spread
+    // Example: Eagles favored by 8.5, Cowboys cover if they lose by 8 or less
+    if (actualMargin === homeTeamSpread) return 'tie'
+    return actualMargin < homeTeamSpread ? 'correct' : 'incorrect'
   }
   
   return 'pending'
