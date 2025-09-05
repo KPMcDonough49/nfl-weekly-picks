@@ -607,10 +607,17 @@ export default function GroupDetail() {
           </div>
         )}
 
+        {/* Debug indicator */}
+        {joinPasswordPrompt && (
+          <div style={{position: 'fixed', top: 0, left: 0, background: 'red', color: 'white', padding: '10px', zIndex: 10000}}>
+            MODAL SHOULD BE VISIBLE - joinPasswordPrompt is true!
+          </div>
+        )}
+        
         {/* Join Password Prompt Modal */}
         {console.log('Rendering modal check:', { joinPasswordPrompt, groupPassword })}
         {joinPasswordPrompt && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-red-500 bg-opacity-90 flex items-center justify-center z-50" style={{zIndex: 9999}}>
             <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
               <h3 className="text-lg font-semibold mb-4">Enter Group Password</h3>
               <p className="text-gray-600 mb-4">This group is password protected. Please enter the password to join.</p>
