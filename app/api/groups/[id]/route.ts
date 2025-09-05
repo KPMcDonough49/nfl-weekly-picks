@@ -35,7 +35,7 @@ export async function GET(
       id: group.id,
       name: group.name,
       description: group.description,
-      password: group.password,
+      password: group.password, // Include password for frontend
       createdBy: group.createdBy,
       currentWeek: 1, // TODO: Calculate actual current week
       memberCount: validMembers.length,
