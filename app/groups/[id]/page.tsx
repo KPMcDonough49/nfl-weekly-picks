@@ -35,6 +35,7 @@ export default function GroupDetail() {
   const [members, setMembers] = useState<Member[]>([])
   const [groupName, setGroupName] = useState('')
   const [groupCreatedBy, setGroupCreatedBy] = useState('')
+  const [groupPassword, setGroupPassword] = useState<string | null>(null)
   const [currentWeek, setCurrentWeek] = useState(1)
   const [loading, setLoading] = useState(true)
   const [picksLocked, setPicksLocked] = useState(false)
@@ -42,6 +43,13 @@ export default function GroupDetail() {
   const [copied, setCopied] = useState(false)
   const [pastWeeksData, setPastWeeksData] = useState<any[]>([])
   const [loadingPastWeeks, setLoadingPastWeeks] = useState(false)
+  const [passwordVerified, setPasswordVerified] = useState(false)
+  const [passwordPrompt, setPasswordPrompt] = useState(false)
+  const [passwordInput, setPasswordInput] = useState('')
+  const [isMember, setIsMember] = useState(false)
+  const [joining, setJoining] = useState(false)
+  const [joinPasswordPrompt, setJoinPasswordPrompt] = useState(false)
+  const [joinPasswordInput, setJoinPasswordInput] = useState('')
 
   // Helper function to format spreads correctly
   const formatSpread = (spread: number, isHome: boolean) => {
@@ -75,6 +83,7 @@ export default function GroupDetail() {
         if (json.success) {
           setGroupName(json.data.name)
           setGroupCreatedBy(json.data.createdBy)
+          setGroupPassword(json.data.password)
           setCurrentWeek(json.data.currentWeek || 1)
         }
       } catch (error) {
@@ -104,7 +113,7 @@ export default function GroupDetail() {
         const res = await fetch(`/api/groups/${groupId}/members?week=${currentWeek}&season=2025`)
         const json = await res.json()
         if (json.success) {
-          setMembers(json.data.members.map((member: any) => ({
+          const membersList = json.data.members.map((member: any) => ({
             id: member.id,
             name: member.name,
             wins: member.wins || 0,
@@ -112,7 +121,14 @@ export default function GroupDetail() {
             ties: member.ties || 0,
             hasPicks: member.hasPicks,
             pickCount: member.pickCount || 0
-          })))
+          }))
+          setMembers(membersList)
+          
+          // Check if current user is a member
+          if (user) {
+            const userIsMember = membersList.some((member: any) => member.id === user.id)
+            setIsMember(userIsMember)
+          }
         }
       } catch (e) {
         console.error('Failed to load members', e)
@@ -160,9 +176,82 @@ export default function GroupDetail() {
     ))
   }
 
+  const handlePasswordVerification = () => {
+    if (passwordInput === groupPassword) {
+      setPasswordVerified(true)
+      setPasswordPrompt(false)
+      setPasswordInput('')
+    } else {
+      alert('Incorrect password')
+    }
+  }
+
+  const handleJoinGroup = () => {
+    if (!user) {
+      alert('You must be signed in to join a group')
+      return
+    }
+
+    if (groupPassword) {
+      setJoinPasswordPrompt(true)
+    } else {
+      joinGroup('')
+    }
+  }
+
+  const handleJoinPasswordVerification = () => {
+    if (joinPasswordInput === groupPassword) {
+      joinGroup(joinPasswordInput)
+    } else {
+      alert('Incorrect password')
+    }
+  }
+
+  const joinGroup = async (password: string) => {
+    if (!user) return
+
+    setJoining(true)
+    try {
+      const response = await fetch(`/api/groups/${groupId}/join`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          password: password || null
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setIsMember(true)
+        setJoinPasswordPrompt(false)
+        setJoinPasswordInput('')
+        // Refresh members list
+        fetchMembers()
+        alert(`Successfully joined ${result.data.groupName}!`)
+      } else {
+        alert(result.error || 'Failed to join group')
+      }
+    } catch (error) {
+      console.error('Error joining group:', error)
+      alert('Failed to join group')
+    } finally {
+      setJoining(false)
+    }
+  }
+
   const handleSubmitPicks = async () => {
     if (!user) {
       alert('You must be signed in to submit picks')
+      return
+    }
+
+    // Check if group is password protected and user hasn't verified
+    if (groupPassword && !passwordVerified) {
+      setPasswordPrompt(true)
       return
     }
 
@@ -201,7 +290,7 @@ export default function GroupDetail() {
       if (result.success) {
         alert(`Successfully submitted ${picksToSubmit.length} picks!`)
         // Redirect to summary page
-        router.push(`/groups/${groupId}/summary`)
+        router.push(`/groups/${groupId}/summary?userId=${user.id}`)
       } else {
         alert(`Error: ${result.error}`)
       }
@@ -277,6 +366,12 @@ export default function GroupDetail() {
             <h1 className="text-3xl font-bold text-gray-900">{groupName}</h1>
           </div>
           <p className="text-gray-600">Week {currentWeek} • {members.length} members</p>
+          {!isMember && user && (
+            <div className="mt-2 flex items-center text-blue-600">
+              <UserGroupIcon className="h-5 w-5 mr-2" />
+              <span className="text-sm">You are not a member of this group. Click "Join Group" to participate.</span>
+            </div>
+          )}
           {picksLocked && (
             <div className="mt-2 flex items-center text-orange-600">
               <LockClosedIcon className="h-5 w-5 mr-2" />
@@ -387,19 +482,31 @@ export default function GroupDetail() {
             <div className="card">
               <h3 className="text-lg font-semibold mb-3">Quick Actions</h3>
               <div className="space-y-2">
-                <button 
-                  onClick={() => user && router.push(`/groups/${groupId}/members/${user.id}/picks`)}
-                  className="w-full btn-primary text-sm"
-                  disabled={!user}
-                >
-                  Make My Picks
-                </button>
-                <button 
-                  onClick={() => router.push(`/groups/${groupId}/summary?userId=${user?.id || 'demo-user'}`)}
-                  className="w-full btn-secondary text-sm"
-                >
-                  View Group Summary
-                </button>
+                {!isMember ? (
+                  <button 
+                    onClick={handleJoinGroup}
+                    className="w-full btn-primary text-sm"
+                    disabled={!user || joining}
+                  >
+                    {joining ? 'Joining...' : 'Join Group'}
+                  </button>
+                ) : (
+                  <>
+                    <button 
+                      onClick={() => user && router.push(`/groups/${groupId}/members/${user.id}/picks`)}
+                      className="w-full btn-primary text-sm"
+                      disabled={!user}
+                    >
+                      Make My Picks
+                    </button>
+                    <button 
+                      onClick={() => router.push(`/groups/${groupId}/summary?userId=${user?.id || 'demo-user'}`)}
+                      className="w-full btn-secondary text-sm"
+                    >
+                      View Group Summary
+                    </button>
+                  </>
+                )}
                 <button
                   onClick={() => {
                     setViewMode('pastWeeks')
@@ -439,7 +546,84 @@ export default function GroupDetail() {
               <span className="text-sm">Picks are locked until next week</span>
             </div>
           )}
+          {groupPassword && !passwordVerified && (
+            <div className="mt-2 flex items-center text-orange-600">
+              <LockClosedIcon className="h-5 w-5 mr-2" />
+              <span className="text-sm">Password required to make picks</span>
+            </div>
+          )}
         </div>
+
+        {/* Password Prompt Modal */}
+        {passwordPrompt && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold mb-4">Enter Group Password</h3>
+              <p className="text-gray-600 mb-4">This group is password protected. Please enter the password to make picks.</p>
+              <input
+                type="password"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                placeholder="Enter group password"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-nfl-blue focus:border-nfl-blue mb-4"
+                onKeyPress={(e) => e.key === 'Enter' && handlePasswordVerification()}
+              />
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setPasswordPrompt(false)
+                    setPasswordInput('')
+                  }}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handlePasswordVerification}
+                  className="btn-primary"
+                >
+                  Verify
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Join Password Prompt Modal */}
+        {joinPasswordPrompt && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold mb-4">Enter Group Password</h3>
+              <p className="text-gray-600 mb-4">This group is password protected. Please enter the password to join.</p>
+              <input
+                type="password"
+                value={joinPasswordInput}
+                onChange={(e) => setJoinPasswordInput(e.target.value)}
+                placeholder="Enter group password"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-nfl-blue focus:border-nfl-blue mb-4"
+                onKeyPress={(e) => e.key === 'Enter' && handleJoinPasswordVerification()}
+              />
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setJoinPasswordPrompt(false)
+                    setJoinPasswordInput('')
+                  }}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleJoinPasswordVerification}
+                  className="btn-primary"
+                  disabled={joining}
+                >
+                  {joining ? 'Joining...' : 'Join Group'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Games and Picks */}

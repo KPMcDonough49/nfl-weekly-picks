@@ -106,6 +106,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = () => {
     setUser(null)
     localStorage.removeItem('auth_token')
+    // Redirect to sign in page
+    window.location.href = '/auth/signin'
   }
 
   return (
