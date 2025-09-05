@@ -9,8 +9,8 @@ export async function POST(request: NextRequest) {
     const updatedGame = await prisma.game.update({
       where: { id: 'eagles-cowboys-2025-week1' },
       data: {
-        homeScore: 34,
-        awayScore: 30,
+        homeScore: 24,
+        awayScore: 20,
         status: 'final'
       }
     });
