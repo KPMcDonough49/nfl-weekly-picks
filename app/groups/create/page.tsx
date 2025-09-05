@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/lib/auth-context'
 
 export default function CreateGroup() {
   const [name, setName] = useState('')
@@ -10,11 +11,18 @@ export default function CreateGroup() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+  const { user } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
+
+    if (!user) {
+      setError('You must be signed in to create a group')
+      setLoading(false)
+      return
+    }
 
     try {
       const response = await fetch('/api/groups', {
@@ -26,7 +34,7 @@ export default function CreateGroup() {
           name,
           description,
           password: password || null, // Send null if no password
-          createdBy: 'demo-user' // TODO: Replace with real user ID from auth
+          createdBy: user.id
         })
       })
 

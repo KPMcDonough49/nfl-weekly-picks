@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { UserGroupIcon, LockClosedIcon, UserIcon, TrophyIcon, ClipboardIcon, CheckIcon } from '@heroicons/react/24/outline'
+import { useAuth } from '@/lib/auth-context'
 
 interface Game {
   id: string
@@ -28,6 +29,7 @@ interface Member {
 export default function GroupDetail() {
   const params = useParams()
   const router = useRouter()
+  const { user } = useAuth()
   const groupId = params.id as string
   const [games, setGames] = useState<Game[]>([])
   const [members, setMembers] = useState<Member[]>([])
@@ -159,6 +161,11 @@ export default function GroupDetail() {
   }
 
   const handleSubmitPicks = async () => {
+    if (!user) {
+      alert('You must be signed in to submit picks')
+      return
+    }
+
     // Filter out games that have already started
     const picksToSubmit = games
       .filter(game => {
@@ -183,7 +190,7 @@ export default function GroupDetail() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: 'demo-user', // TODO: Replace with real user ID from auth
+          userId: user?.id,
           groupId: groupId,
           picks: picksToSubmit
         })
