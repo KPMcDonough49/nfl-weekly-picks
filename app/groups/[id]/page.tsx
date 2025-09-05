@@ -173,7 +173,11 @@ export default function GroupDetail() {
   }
 
   const handlePick = (gameId: string, pick: string) => {
-    // Allow picks for started games but they'll be marked as locked in the UI
+    // Don't allow picks for locked games
+    if (isGameLocked(gameId)) {
+      return
+    }
+    
     setGames(prev => prev.map(game => {
       if (game.id === gameId) {
         // Convert 'home'/'away' to actual team names
