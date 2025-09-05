@@ -395,7 +395,7 @@ export default function GroupDetail() {
                   Make My Picks
                 </button>
                 <button 
-                  onClick={() => router.push(`/groups/${groupId}/summary`)}
+                  onClick={() => router.push(`/groups/${groupId}/summary?userId=${user?.id || 'demo-user'}`)}
                   className="w-full btn-secondary text-sm"
                 >
                   View Group Summary
@@ -556,7 +556,7 @@ export default function GroupDetail() {
 
   // Show summary view (redirect to summary page)
   if (viewMode === 'summary') {
-    router.push(`/groups/${groupId}/summary`)
+    router.push(`/groups/${groupId}/summary?userId=${user?.id || 'demo-user'}`)
     return null
   }
 
