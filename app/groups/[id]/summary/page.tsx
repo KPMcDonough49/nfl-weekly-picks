@@ -75,6 +75,8 @@ export default function GroupSummaryPage() {
   const [group, setGroup] = useState<{ id: string; name: string; description: string | null } | null>(null)
   const [games, setGames] = useState<Game[]>([])
   const [members, setMembers] = useState<Member[]>([])
+  const [allPicks, setAllPicks] = useState<any[]>([])
+  const [allWeeklyScores, setAllWeeklyScores] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [picksLocked, setPicksLocked] = useState(false)
   const [currentUserId, setCurrentUserId] = useState('demo-user')
@@ -113,6 +115,22 @@ export default function GroupSummaryPage() {
           setMembers(membersData.data.members)
         }
         
+        // Fetch picks data for all members
+        const picksRes = await fetch(`/api/groups/${groupId}/picks?week=${currentWeek}&season=${currentSeason}`)
+        const picksData = await picksRes.json()
+        
+        if (picksData.success) {
+          setAllPicks(picksData.data.picks || [])
+        }
+        
+        // Fetch weekly scores data
+        const scoresRes = await fetch(`/api/groups/${groupId}/weekly-scores?week=${currentWeek}&season=${currentSeason}`)
+        const scoresData = await scoresRes.json()
+        
+        if (scoresData.success) {
+          setAllWeeklyScores(scoresData.data.scores || [])
+        }
+        
         setPicksLocked(false) // No global lock anymore
       } catch (error) {
         console.error('Error fetching summary data:', error)
@@ -142,18 +160,70 @@ export default function GroupSummaryPage() {
     )
   }
     
-  // For now, we'll create a simplified version that works with the available data
-  // TODO: Add picks fetching logic when needed
-  const picksWithResults = games.map(game => ({
-    ...game,
-    picks: members.map(member => ({
-      memberId: member.id,
-      memberName: member.name,
-      pick: null, // Will be populated when we add picks fetching
-      confidence: null,
-      result: null
-    }))
-  }))
+  // Group picks and scores by user ID
+  const picksByUser = allPicks.reduce((acc, pick) => {
+    if (!acc[pick.userId]) acc[pick.userId] = []
+    acc[pick.userId].push(pick)
+    return acc
+  }, {} as Record<string, any[]>)
+
+  const scoresByUser = allWeeklyScores.reduce((acc, score) => {
+    acc[score.userId] = score
+    return acc
+  }, {} as Record<string, any>)
+
+  // Process each member
+  const membersWithPicks = members.map(member => {
+    const picks = picksByUser[member.id] || []
+    const weeklyScore = scoresByUser[member.id]
+
+    // Grade each pick
+    const picksWithResults = picks.map(pick => {
+      const game = games.find(g => g.id === pick.gameId)
+      if (!game) return null
+
+      // Use the stored result from the database, or calculate if not available
+      const result = pick.result || gradePick(pick, game)
+      return {
+        id: pick.id,
+        gameId: pick.gameId,
+        pick: pick.pick,
+        confidence: pick.confidence,
+        result: result,
+        game: game
+      }
+    }).filter(Boolean)
+
+    return {
+      id: member.id,
+      name: member.name,
+      firstName: member.name.split(' ')[0] || member.name,
+      lastName: member.name.split(' ').slice(1).join(' ') || '',
+      wins: weeklyScore?.wins || 0,
+      losses: weeklyScore?.losses || 0,
+      ties: weeklyScore?.ties || 0,
+      picks: picksWithResults
+    }
+  })
+
+  // Create picks with results for display
+  const picksWithResults = games.map(game => {
+    const gamePicks = membersWithPicks.map(member => {
+      const pick = member.picks.find(p => p && p.gameId === game.id)
+      return {
+        memberId: member.id,
+        memberName: member.name,
+        pick: pick?.pick || null,
+        confidence: pick?.confidence || null,
+        result: pick?.result || (pick ? gradePick(pick, game) : null)
+      }
+    })
+    
+    return {
+      ...game,
+      picks: gamePicks
+    }
+  })
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -256,7 +326,7 @@ export default function GroupSummaryPage() {
           <div className="lg:col-span-1">
             <h2 className="text-xl font-semibold mb-4">Group Members</h2>
             <div className="space-y-3">
-              {members.map((member) => (
+              {membersWithPicks.map((member) => (
                 <div 
                   key={member.id} 
                   className={`card ${member.id === currentUserId ? 'ring-2 ring-nfl-blue' : ''}`}
@@ -270,12 +340,12 @@ export default function GroupSummaryPage() {
                         )}
                       </h3>
                       <div className="text-sm text-gray-600">
-                        0-0-0
+                        {member.wins}-{member.losses}-{member.ties}
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="text-sm text-gray-500">
-                        0 picks
+                        {member.picks.length} picks
                       </div>
                     </div>
                   </div>
