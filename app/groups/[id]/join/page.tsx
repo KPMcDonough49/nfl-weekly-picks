@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { ClipboardIcon, CheckIcon, LockClosedIcon } from '@heroicons/react/24/outline'
+import { useAuth } from '@/lib/auth-context'
 
 interface Group {
   id: string
@@ -15,6 +16,7 @@ interface Group {
 export default function JoinGroupPage() {
   const params = useParams()
   const router = useRouter()
+  const { user } = useAuth()
   const groupId = params.id as string
   
   const [group, setGroup] = useState<Group | null>(null)
@@ -53,6 +55,12 @@ export default function JoinGroupPage() {
     setError('')
     setSuccess('')
 
+    if (!user) {
+      setError('You must be signed in to join a group')
+      setJoining(false)
+      return
+    }
+
     try {
       const response = await fetch(`/api/groups/${groupId}/join`, {
         method: 'POST',
@@ -60,7 +68,7 @@ export default function JoinGroupPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: 'demo-user', // TODO: Replace with real user ID from auth
+          userId: user.id,
           password: password || null
         })
       })
@@ -100,6 +108,23 @@ export default function JoinGroupPage() {
         <div className="animate-pulse">
           <div className="h-8 bg-gray-300 rounded w-1/3 mb-6"></div>
           <div className="h-32 bg-gray-300 rounded"></div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Sign In Required</h1>
+          <p className="text-gray-600 mb-6">You must be signed in to join a group.</p>
+          <button
+            onClick={() => router.push('/auth/signin')}
+            className="btn-primary"
+          >
+            Sign In
+          </button>
         </div>
       </div>
     )
