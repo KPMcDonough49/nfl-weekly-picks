@@ -169,3 +169,4 @@ MIT License - see LICENSE file for details.
 - [ ] Social features (comments, reactions)
 # nfl-weekly-picks
 # Trigger deployment
+# Trigger Vercel deployment - Fri Sep  5 14:00:29 PDT 2025
