@@ -9,9 +9,6 @@ export async function POST(request: NextRequest) {
         pick: {
           in: ['home', 'away']
         }
-      },
-      include: {
-        game: true
       }
     })
 
@@ -20,13 +17,18 @@ export async function POST(request: NextRequest) {
     let fixedCount = 0
 
     for (const pick of picksToFix) {
-      if (!pick.game) {
+      // Fetch the associated game
+      const game = await prisma.game.findUnique({
+        where: { id: pick.gameId }
+      })
+
+      if (!game) {
         console.log(`Pick ${pick.id} has no associated game, skipping`)
         continue
       }
 
       // Convert 'home'/'away' to actual team names
-      const teamName = pick.pick === 'home' ? pick.game.homeTeam : pick.game.awayTeam
+      const teamName = pick.pick === 'home' ? game.homeTeam : game.awayTeam
 
       // Update the pick with the correct team name
       await prisma.pick.update({
