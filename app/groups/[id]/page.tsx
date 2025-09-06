@@ -213,15 +213,21 @@ export default function GroupDetail() {
   }
 
   const handlePick = (gameId: string, pick: string) => {
+    console.log('handlePick called:', { gameId, pick })
+    
     // Don't allow picks for locked games
     if (isGameLocked(gameId)) {
+      console.log('Game is locked, returning early')
       return
     }
+    
+    console.log('Game is not locked, proceeding with pick')
     
     setGames(prev => prev.map(game => {
       if (game.id === gameId) {
         // Convert 'home'/'away' to actual team names
         const teamName = pick === 'home' ? game.homeTeam : game.awayTeam
+        console.log('Setting pick:', { gameId, pick, teamName })
         return { ...game, userPick: teamName }
       }
       return game
