@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
 
 function gradePick(pick: any, game: any): 'correct' | 'incorrect' | 'tie' | 'pending' {
   const { pick: pickType, gameId } = pick
-  const { homeScore, awayScore, spread, overUnder, homeTeam, awayTeam } = game
+  const { homeScore, awayScore, overUnder, homeTeam, awayTeam } = game
 
   if (!homeScore || !awayScore) {
     return 'pending'
