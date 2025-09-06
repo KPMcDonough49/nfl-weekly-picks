@@ -622,11 +622,16 @@ export default function GroupDetail() {
           </div>
         )}
         
+        {/* Always visible test */}
+        <div style={{position: 'fixed', top: '50px', left: 0, background: 'green', color: 'white', padding: '10px', zIndex: 10000}}>
+          ALWAYS VISIBLE TEST - joinPasswordPrompt: {joinPasswordPrompt ? 'TRUE' : 'FALSE'}
+        </div>
+        
         {/* Simple test - always show this when joinPasswordPrompt is true */}
         {(() => {
           console.log('JSX conditional check - joinPasswordPrompt:', joinPasswordPrompt);
           return joinPasswordPrompt && (
-            <div style={{position: 'fixed', top: '50px', left: 0, background: 'blue', color: 'white', padding: '10px', zIndex: 10000}}>
+            <div style={{position: 'fixed', top: '100px', left: 0, background: 'blue', color: 'white', padding: '10px', zIndex: 10000}}>
               SIMPLE TEST - This should always show when joinPasswordPrompt is true
             </div>
           );
