@@ -138,20 +138,6 @@ export default function GroupDetail() {
         const json = await res.json()
         if (json.success) {
           setGames(json.data.games as Game[])
-          
-          // Debug: Log game times for completed games
-          const completedGames = json.data.games.filter((game: any) => 
-            game.homeTeam.includes('Eagles') || game.homeTeam.includes('Chiefs') || 
-            game.awayTeam.includes('Eagles') || game.awayTeam.includes('Chiefs')
-          )
-          console.log('Completed games data:', completedGames.map((game: any) => ({
-            id: game.id,
-            matchup: `${game.awayTeam} @ ${game.homeTeam}`,
-            gameTime: game.gameTime,
-            status: game.status,
-            homeScore: game.homeScore,
-            awayScore: game.awayScore
-          })))
         }
       } catch (e) {
         console.error('Failed to load games', e)
@@ -183,23 +169,11 @@ export default function GroupDetail() {
     const game = games.find(g => g.id === gameId)
     if (!game) return false
     
+    // Use the same logic that works in the user picks page
     const gameStartTime = new Date(game.gameTime)
-    const now = new Date()
-    const isLocked = now > gameStartTime
+    const gameHasStarted = new Date() > gameStartTime
     
-    // Debug logging for specific games
-    if (game.homeTeam.includes('Eagles') || game.homeTeam.includes('Chiefs') || 
-        game.awayTeam.includes('Eagles') || game.awayTeam.includes('Chiefs')) {
-      console.log(`Game Lock Check - ${game.awayTeam} @ ${game.homeTeam}:`, {
-        gameTime: game.gameTime,
-        gameStartTime: gameStartTime.toISOString(),
-        now: now.toISOString(),
-        isLocked,
-        timeDiff: now.getTime() - gameStartTime.getTime()
-      })
-    }
-    
-    return isLocked
+    return gameHasStarted
   }
 
   const handlePick = (gameId: string, pick: string) => {
