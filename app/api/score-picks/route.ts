@@ -8,15 +8,39 @@ export async function POST(request: NextRequest) {
     const season = searchParams.get('season')
     const groupId = searchParams.get('groupId')
 
+    // If no week/season provided, use current week/season
+    let targetWeek: number
+    let targetSeason: number
+    
     if (!week || !season) {
-      return NextResponse.json(
-        { success: false, error: 'Week and season are required' },
-        { status: 400 }
-      )
+      const now = new Date()
+      const year = now.getFullYear()
+      
+      // NFL Week 1 typically starts on the first Thursday of September
+      // For 2025, let's assume Week 1 starts September 4th (Thursday)
+      const seasonStart = new Date(year, 8, 4) // September 4th
+      
+      if (now >= seasonStart) {
+        // Current season
+        const weekStart = new Date(seasonStart)
+        let weekNumber = 1
+        
+        while (weekStart <= now && weekNumber <= 18) {
+          weekStart.setDate(weekStart.getDate() + 7)
+          weekNumber++
+        }
+        
+        targetWeek = Math.min(18, Math.max(1, weekNumber - 1))
+        targetSeason = year
+      } else {
+        // Previous season
+        targetWeek = 18
+        targetSeason = year - 1
+      }
+    } else {
+      targetWeek = parseInt(week)
+      targetSeason = parseInt(season)
     }
-
-    const targetWeek = parseInt(week)
-    const targetSeason = parseInt(season)
 
     // Get all completed games for this week
     const completedGames = await prisma.game.findMany({
@@ -33,7 +57,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         message: 'No completed games found for this week',
-        data: { gamesProcessed: 0 }
+        data: { gamesProcessed: 0, week: targetWeek, season: targetSeason }
       })
     }
 
