@@ -115,6 +115,11 @@ export default function GroupDetail() {
     console.log('State changed:', { joinPasswordPrompt, groupPassword, isMember })
   }, [joinPasswordPrompt, groupPassword, isMember])
 
+  // Debug useEffect specifically for joinPasswordPrompt
+  useEffect(() => {
+    console.log('joinPasswordPrompt changed to:', joinPasswordPrompt)
+  }, [joinPasswordPrompt])
+
   useEffect(() => {
     // Fetch group data
     const fetchGroupData = async () => {
@@ -211,9 +216,12 @@ export default function GroupDetail() {
       return
     }
 
+    console.log('groupPassword check:', { groupPassword, type: typeof groupPassword, truthy: !!groupPassword })
+    
     if (groupPassword) {
       console.log('Setting join password prompt to true')
       setJoinPasswordPrompt(true)
+      console.log('After setJoinPasswordPrompt(true), joinPasswordPrompt should be true')
       alert('Password prompt should appear now!')
     } else {
       console.log('No password, joining directly')
