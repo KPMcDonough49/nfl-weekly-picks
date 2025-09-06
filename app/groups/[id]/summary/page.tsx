@@ -30,6 +30,18 @@ interface Pick {
   result: string | null
 }
 
+// Helper function to format spreads correctly
+const formatSpread = (spread: number, isHome: boolean) => {
+  if (spread === 0) return 'PK'
+  if (isHome) {
+    // Home team spread
+    return spread > 0 ? `+${spread}` : `${spread}`
+  } else {
+    // Away team spread (opposite of home team)
+    return spread > 0 ? `-${spread}` : `+${Math.abs(spread)}`
+  }
+}
+
 // Helper function to grade picks (same logic as in score-picks.js)
 const gradePick = (pick: Pick, game: Game): string => {
   if (game.status !== 'final' || game.homeScore === null || game.homeScore === undefined || game.awayScore === null || game.awayScore === undefined) {
@@ -43,58 +55,76 @@ const gradePick = (pick: Pick, game: Game): string => {
 
   if (pick.pick === game.homeTeam) {
     // User picked home team
-    if (spread > 0) {
-      // Home team is favored (positive spread means home team favored)
-      if (actualSpread > spread) {
+    if (spread < 0) {
+      // Home team is favored (negative spread means home team favored)
+      if (actualSpread > Math.abs(spread)) {
         return 'correct' // Home team won by more than spread
-      } else if (actualSpread === spread) {
+      } else if (actualSpread === Math.abs(spread)) {
         return 'tie' // Home team won by exactly the spread
       } else {
         return 'incorrect' // Home team won by less than spread (or lost)
       }
-    } else {
-      // Home team is underdog (negative spread means away team favored)
+    } else if (spread > 0) {
+      // Home team is underdog (positive spread means away team favored)
       if (actualSpread > 0) {
         return 'correct' // Home team won (underdog won)
       } else if (actualSpread === 0) {
         return 'tie' // Tied game
       } else {
         // Home team lost, check if they covered
-        if (Math.abs(actualSpread) < Math.abs(spread)) {
+        if (Math.abs(actualSpread) < spread) {
           return 'correct' // Home team lost by less than spread (covered)
-        } else if (Math.abs(actualSpread) === Math.abs(spread)) {
+        } else if (Math.abs(actualSpread) === spread) {
           return 'tie' // Home team lost by exactly the spread
         } else {
           return 'incorrect' // Home team lost by more than spread
         }
       }
+    } else {
+      // Even spread (pick'em)
+      if (actualSpread > 0) {
+        return 'correct' // Home team won
+      } else if (actualSpread < 0) {
+        return 'incorrect' // Home team lost
+      } else {
+        return 'tie' // Tied game
+      }
     }
   } else if (pick.pick === game.awayTeam) {
     // User picked away team
-    if (spread < 0) {
-      // Away team is favored (negative spread means away team favored)
-      if (actualSpread < spread) {
+    if (spread > 0) {
+      // Away team is favored (positive spread means away team favored)
+      if (actualSpread < -spread) {
         return 'correct' // Away team won by more than spread
-      } else if (actualSpread === spread) {
+      } else if (actualSpread === -spread) {
         return 'tie' // Away team won by exactly the spread
       } else {
         return 'incorrect' // Away team won by less than spread (or lost)
       }
-    } else {
-      // Away team is underdog (positive spread means home team favored)
+    } else if (spread < 0) {
+      // Away team is underdog (negative spread means home team favored)
       if (actualSpread < 0) {
         return 'correct' // Away team won (underdog won)
       } else if (actualSpread === 0) {
         return 'tie' // Tied game
       } else {
         // Away team lost, check if they covered
-        if (actualSpread < spread) {
+        if (actualSpread < Math.abs(spread)) {
           return 'correct' // Away team lost by less than spread (covered)
-        } else if (actualSpread === spread) {
+        } else if (actualSpread === Math.abs(spread)) {
           return 'tie' // Away team lost by exactly the spread
         } else {
           return 'incorrect' // Away team lost by more than spread
         }
+      }
+    } else {
+      // Even spread (pick'em)
+      if (actualSpread < 0) {
+        return 'correct' // Away team won
+      } else if (actualSpread > 0) {
+        return 'incorrect' // Away team lost
+      } else {
+        return 'tie' // Tied game
       }
     }
   }
@@ -299,7 +329,7 @@ export default function GroupSummaryPage() {
                       {game.awayTeam} @ {game.homeTeam}
                     </div>
                     <div className="text-xs text-gray-600">
-                      {game.awayTeam} {game.spread && game.spread > 0 ? `+${game.spread}` : game.spread} | {game.homeTeam} {game.spread && game.spread < 0 ? game.spread : (game.spread ? `+${Math.abs(game.spread)}` : 'PK')}
+                      {game.awayTeam} {formatSpread(game.spread || 0, false)} | {game.homeTeam} {formatSpread(game.spread || 0, true)}
                     </div>
                     <div className="text-xs text-gray-600">
                       O/U: {game.overUnder}
