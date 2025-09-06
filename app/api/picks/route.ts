@@ -65,8 +65,18 @@ export async function POST(request: NextRequest) {
       return new Date() > new Date(game.gameTime)
     })
     
-    // Allow picks for started games but mark them as locked
-    // The frontend will handle displaying scores and graying out buttons
+    // Block picks for games that have already started
+    if (lockedPicks.length > 0) {
+      const lockedGameIds = lockedPicks.map(p => p.gameId)
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Cannot make picks for games that have already started',
+          lockedGames: lockedGameIds
+        },
+        { status: 400 }
+      )
+    }
 
     // Verify that all gameIds exist in the database (games are global, not tied to groups)
     const existingGames = await prisma.game.findMany({

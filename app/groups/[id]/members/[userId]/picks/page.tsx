@@ -335,6 +335,7 @@ export default function UserPicksPage() {
                 const gameStartTime = new Date(game.gameTime)
                 const gameHasStarted = new Date() > gameStartTime
                 const canViewPick = canEdit || gameHasStarted
+                const canEditPick = canEdit && !gameHasStarted
                 
                 return (
                   <div key={game.id} className="card">
@@ -362,27 +363,27 @@ export default function UserPicksPage() {
                       <div className="flex justify-center space-x-4">
                         <button
                           onClick={() => handleMakePick(game.id, 'away')}
-                          disabled={!canEdit || picksLocked}
+                          disabled={!canEditPick}
                           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                             currentPick === 'away'
                               ? 'bg-green-100 text-green-800 border border-green-200'
-                              : canEdit && !picksLocked
+                              : canEditPick
                               ? 'bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200'
                               : 'bg-gray-100 text-gray-500 border border-gray-200'
-                          } ${(!canEdit || picksLocked) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          } ${!canEditPick ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                           {game.awayTeam} {formatSpread(game.spread, false)}
                         </button>
                         <button
                           onClick={() => handleMakePick(game.id, 'home')}
-                          disabled={!canEdit || picksLocked}
+                          disabled={!canEditPick}
                           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                             currentPick === 'home'
                               ? 'bg-green-100 text-green-800 border border-green-200'
-                              : canEdit && !picksLocked
+                              : canEditPick
                               ? 'bg-blue-100 text-blue-800 border border-blue-200 hover:bg-blue-200'
                               : 'bg-gray-100 text-gray-500 border border-gray-200'
-                          } ${(!canEdit || picksLocked) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          } ${!canEditPick ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                           {game.homeTeam} {formatSpread(game.spread, true)}
                         </button>
