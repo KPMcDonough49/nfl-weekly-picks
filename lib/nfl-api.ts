@@ -80,25 +80,33 @@ function transformAPIDataToGames(oddsData: any[], week: number, season: number):
     const spreadMarket = bookmaker?.markets?.find((m: any) => m.key === 'spreads')
     const totalMarket = bookmaker?.markets?.find((m: any) => m.key === 'totals')
     
-    
-    // Get the raw spread value
-    const rawSpread = spreadMarket?.outcomes?.[0]?.point || 0
     const overUnder = totalMarket?.outcomes?.[0]?.point || 0
     
-    // The API returns spreads where each outcome has a point value
-    // Negative point = team is favored (giving points)
-    // Positive point = team is underdog (getting points)
-    // We need to find the home team's spread value
+    // The Odds API returns spreads where each team has a point value
+    // The spread value represents how many points that team is giving/getting
+    // We need to determine which team is favored and store the spread accordingly
+    
     let homeSpread: number = 0
     
-    if (spreadMarket?.outcomes) {
-      // Find the home team's outcome
+    if (spreadMarket?.outcomes && spreadMarket.outcomes.length >= 2) {
+      // Find both team outcomes
       const homeTeamOutcome = spreadMarket.outcomes.find((o: any) => o.name === game.home_team)
-      if (homeTeamOutcome) {
-        // Use the home team's spread value directly (no sign flip needed)
-        homeSpread = homeTeamOutcome.point || 0
+      const awayTeamOutcome = spreadMarket.outcomes.find((o: any) => o.name === game.away_team)
+      
+      if (homeTeamOutcome && awayTeamOutcome) {
+        const homePoint = homeTeamOutcome.point || 0
+        const awayPoint = awayTeamOutcome.point || 0
+        
+        // The spread should be the same absolute value for both teams, but opposite signs
+        // The favored team has a negative point value (giving points)
+        // The underdog has a positive point value (getting points)
+        
+        // Store the spread from the home team's perspective
+        // If home team is favored (negative point), store as negative
+        // If home team is underdog (positive point), store as positive
+        homeSpread = homePoint
       } else {
-        // Fallback: if we can't find home team, use the first outcome's point
+        // Fallback: use the first outcome's point
         homeSpread = spreadMarket.outcomes[0]?.point || 0
       }
     }
@@ -247,9 +255,9 @@ export async function fetchGamesForWeek(week: number, season: number): Promise<N
         season: 2025,
         homeTeam: 'Philadelphia Eagles',
         awayTeam: 'Dallas Cowboys',
-        homeScore: 34,
-        awayScore: 30,
-        spread: -8.5,
+        homeScore: 24,
+        awayScore: 20,
+        spread: -8.5, // Eagles favored by 8.5 points
         overUnder: 47.5,
         gameTime: '2025-09-05T21:00:00.000Z',
         status: 'final'

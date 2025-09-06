@@ -123,31 +123,68 @@ function gradePick(pick: any, game: any): 'correct' | 'incorrect' | 'tie' | 'pen
     return 'pending'
   }
 
-  // Calculate actual spread result
-  const actualSpread = homeScore - awayScore
   const spread = game.spread || 0
+  const actualSpread = homeScore - awayScore // Positive = home won, Negative = away won
   
   // Calculate total points for over/under
   const totalPoints = homeScore + awayScore
   
   // Grade the pick based on what was actually picked
   if (pickType === homeTeam) {
-    // User picked home team - did they cover the spread?
-    if (actualSpread > spread) {
-      return 'correct' // Home team covered
-    } else if (actualSpread < spread) {
-      return 'incorrect' // Home team didn't cover
+    // User picked home team
+    if (spread > 0) {
+      // Home team is favored (positive spread means home team favored)
+      if (actualSpread > spread) {
+        return 'correct' // Home team won by more than spread
+      } else if (actualSpread === spread) {
+        return 'tie' // Home team won by exactly the spread
+      } else {
+        return 'incorrect' // Home team won by less than spread (or lost)
+      }
     } else {
-      return 'tie' // Exactly the spread
+      // Home team is underdog (negative spread means away team favored)
+      if (actualSpread > 0) {
+        return 'correct' // Home team won (underdog won)
+      } else if (actualSpread === 0) {
+        return 'tie' // Tied game
+      } else {
+        // Home team lost, check if they covered
+        if (Math.abs(actualSpread) < Math.abs(spread)) {
+          return 'correct' // Home team lost by less than spread (covered)
+        } else if (Math.abs(actualSpread) === Math.abs(spread)) {
+          return 'tie' // Home team lost by exactly the spread
+        } else {
+          return 'incorrect' // Home team lost by more than spread
+        }
+      }
     }
   } else if (pickType === awayTeam) {
-    // User picked away team - did they cover the spread?
-    if (actualSpread < spread) {
-      return 'correct' // Away team covered (home didn't beat spread)
-    } else if (actualSpread > spread) {
-      return 'incorrect' // Away team didn't cover (home beat spread)
+    // User picked away team
+    if (spread < 0) {
+      // Away team is favored (negative spread means away team favored)
+      if (actualSpread < spread) {
+        return 'correct' // Away team won by more than spread
+      } else if (actualSpread === spread) {
+        return 'tie' // Away team won by exactly the spread
+      } else {
+        return 'incorrect' // Away team won by less than spread (or lost)
+      }
     } else {
-      return 'tie' // Exactly the spread
+      // Away team is underdog (positive spread means home team favored)
+      if (actualSpread < 0) {
+        return 'correct' // Away team won (underdog won)
+      } else if (actualSpread === 0) {
+        return 'tie' // Tied game
+      } else {
+        // Away team lost, check if they covered
+        if (actualSpread < spread) {
+          return 'correct' // Away team lost by less than spread (covered)
+        } else if (actualSpread === spread) {
+          return 'tie' // Away team lost by exactly the spread
+        } else {
+          return 'incorrect' // Away team lost by more than spread
+        }
+      }
     }
   } else if (pickType === 'over') {
     if (totalPoints > overUnder) {
