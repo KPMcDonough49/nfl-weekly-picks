@@ -622,6 +622,16 @@ export default function GroupDetail() {
           </div>
         )}
         
+        {/* Simple test - always show this when joinPasswordPrompt is true */}
+        {(() => {
+          console.log('JSX conditional check - joinPasswordPrompt:', joinPasswordPrompt);
+          return joinPasswordPrompt && (
+            <div style={{position: 'fixed', top: '50px', left: 0, background: 'blue', color: 'white', padding: '10px', zIndex: 10000}}>
+              SIMPLE TEST - This should always show when joinPasswordPrompt is true
+            </div>
+          );
+        })()}
+        
         {/* Join Password Prompt Modal */}
         {(() => {
           console.log('Rendering modal check:', { joinPasswordPrompt, groupPassword });
