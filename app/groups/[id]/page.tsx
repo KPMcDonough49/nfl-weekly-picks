@@ -615,7 +615,10 @@ export default function GroupDetail() {
         )}
         
         {/* Join Password Prompt Modal */}
-        {console.log('Rendering modal check:', { joinPasswordPrompt, groupPassword })}
+        {(() => {
+          console.log('Rendering modal check:', { joinPasswordPrompt, groupPassword });
+          return null;
+        })()}
         {joinPasswordPrompt && (
           <div className="fixed inset-0 bg-red-500 bg-opacity-90 flex items-center justify-center z-50" style={{zIndex: 9999}}>
             <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
