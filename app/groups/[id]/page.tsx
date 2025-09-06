@@ -716,7 +716,10 @@ export default function GroupDetail() {
 
                   <div className="flex space-x-2">
                     <button
-                      onClick={() => handlePick(game.id, 'away')}
+                      onClick={() => {
+                        console.log('Away button clicked for game:', game.id, game.awayTeam)
+                        handlePick(game.id, 'away')
+                      }}
                       disabled={isGameLocked(game.id)}
                       className={`flex-1 py-2 px-4 rounded-lg border-2 transition-all ${
                         game.userPick === game.awayTeam
@@ -727,7 +730,10 @@ export default function GroupDetail() {
                       {isGameLocked(game.id) ? 'LOCKED' : `${game.awayTeam} ${formatSpread(game.spread, false)}`}
                     </button>
                     <button
-                      onClick={() => handlePick(game.id, 'home')}
+                      onClick={() => {
+                        console.log('Home button clicked for game:', game.id, game.homeTeam)
+                        handlePick(game.id, 'home')
+                      }}
                       disabled={isGameLocked(game.id)}
                       className={`flex-1 py-2 px-4 rounded-lg border-2 transition-all ${
                         game.userPick === game.homeTeam
