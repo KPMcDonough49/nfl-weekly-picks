@@ -387,7 +387,14 @@ export default function GroupDetail() {
   }
 
   // Test: Always show a simple banner to verify component is rendering
-  console.log('Component rendering, joinPasswordPrompt:', joinPasswordPrompt)
+  console.log('Component rendering, joinPasswordPrompt:', joinPasswordPrompt, 'viewMode:', viewMode)
+
+  // Test banner that should always be visible
+  const testBanner = (
+    <div style={{position: 'fixed', top: 0, left: 0, background: 'purple', color: 'white', padding: '10px', zIndex: 10000}}>
+      TEST BANNER - joinPasswordPrompt: {joinPasswordPrompt ? 'TRUE' : 'FALSE'} - viewMode: {viewMode}
+    </div>
+  )
 
   // Show members view by default
   if (viewMode === 'members') {
@@ -890,6 +897,7 @@ export default function GroupDetail() {
             ))}
           </div>
         )}
+        {testBanner}
       </div>
     )
   }
