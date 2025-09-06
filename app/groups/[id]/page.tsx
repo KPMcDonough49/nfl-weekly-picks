@@ -173,6 +173,18 @@ export default function GroupDetail() {
     const gameStartTime = new Date(game.gameTime)
     const gameHasStarted = new Date() > gameStartTime
     
+    // Debug logging for specific games
+    if (game.homeTeam.includes('Eagles') || game.homeTeam.includes('Chiefs') || 
+        game.awayTeam.includes('Eagles') || game.awayTeam.includes('Chiefs')) {
+      console.log(`Game Lock Check - ${game.awayTeam} @ ${game.homeTeam}:`, {
+        gameTime: game.gameTime,
+        gameStartTime: gameStartTime.toISOString(),
+        now: new Date().toISOString(),
+        gameHasStarted,
+        timeDiff: new Date().getTime() - gameStartTime.getTime()
+      })
+    }
+    
     return gameHasStarted
   }
 
