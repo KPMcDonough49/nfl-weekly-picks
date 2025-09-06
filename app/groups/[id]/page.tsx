@@ -222,6 +222,13 @@ export default function GroupDetail() {
       console.log('Setting join password prompt to true')
       setJoinPasswordPrompt(true)
       console.log('After setJoinPasswordPrompt(true), joinPasswordPrompt should be true')
+      
+      // Test: Try setting it again with a timeout to see if it's a batching issue
+      setTimeout(() => {
+        console.log('Timeout test - setting joinPasswordPrompt to true again')
+        setJoinPasswordPrompt(true)
+      }, 100)
+      
       alert('Password prompt should appear now!')
     } else {
       console.log('No password, joining directly')
@@ -628,6 +635,15 @@ export default function GroupDetail() {
         {/* Always visible test */}
         <div style={{position: 'fixed', top: '50px', left: 0, background: 'green', color: 'white', padding: '10px', zIndex: 10000}}>
           ALWAYS VISIBLE TEST - joinPasswordPrompt: {joinPasswordPrompt ? 'TRUE' : 'FALSE'}
+          <button 
+            onClick={() => {
+              console.log('Direct button click - setting joinPasswordPrompt to true')
+              setJoinPasswordPrompt(true)
+            }}
+            style={{background: 'white', color: 'black', padding: '5px', margin: '5px'}}
+          >
+            TEST SET STATE
+          </button>
         </div>
         
         {/* Simple test - always show this when joinPasswordPrompt is true */}
