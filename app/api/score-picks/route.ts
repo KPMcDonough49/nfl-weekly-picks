@@ -117,37 +117,54 @@ export async function POST(request: NextRequest) {
 
 function gradePick(pick: any, game: any): 'correct' | 'incorrect' | 'tie' | 'pending' {
   const { pick: pickType, gameId } = pick
-  const { homeScore, awayScore, spread, overUnder } = game
+  const { homeScore, awayScore, spread, overUnder, homeTeam, awayTeam } = game
 
   if (!homeScore || !awayScore) {
     return 'pending'
   }
 
-  const homeTeamWon = homeScore > awayScore
-  const awayTeamWon = awayScore > homeScore
-  const tied = homeScore === awayScore
-
   // Calculate actual spread result
   const actualSpread = homeScore - awayScore
-  const spreadResult = actualSpread > spread ? 'home' : 'away'
+  const spread = game.spread || 0
   
-  // Calculate total points
+  // Calculate total points for over/under
   const totalPoints = homeScore + awayScore
-  const overUnderResult = totalPoints > overUnder ? 'over' : 'under'
-
-  // Grade the pick
-  if (pickType === 'home') {
-    if (tied) return 'tie'
-    return homeTeamWon ? 'correct' : 'incorrect'
-  } else if (pickType === 'away') {
-    if (tied) return 'tie'
-    return awayTeamWon ? 'correct' : 'incorrect'
+  
+  // Grade the pick based on what was actually picked
+  if (pickType === homeTeam) {
+    // User picked home team - did they cover the spread?
+    if (actualSpread > spread) {
+      return 'correct' // Home team covered
+    } else if (actualSpread < spread) {
+      return 'incorrect' // Home team didn't cover
+    } else {
+      return 'tie' // Exactly the spread
+    }
+  } else if (pickType === awayTeam) {
+    // User picked away team - did they cover the spread?
+    if (actualSpread < spread) {
+      return 'correct' // Away team covered (home didn't beat spread)
+    } else if (actualSpread > spread) {
+      return 'incorrect' // Away team didn't cover (home beat spread)
+    } else {
+      return 'tie' // Exactly the spread
+    }
   } else if (pickType === 'over') {
-    if (totalPoints === overUnder) return 'tie'
-    return overUnderResult === 'over' ? 'correct' : 'incorrect'
+    if (totalPoints > overUnder) {
+      return 'correct'
+    } else if (totalPoints < overUnder) {
+      return 'incorrect'
+    } else {
+      return 'tie'
+    }
   } else if (pickType === 'under') {
-    if (totalPoints === overUnder) return 'tie'
-    return overUnderResult === 'under' ? 'correct' : 'incorrect'
+    if (totalPoints < overUnder) {
+      return 'correct'
+    } else if (totalPoints > overUnder) {
+      return 'incorrect'
+    } else {
+      return 'tie'
+    }
   }
 
   return 'pending'
