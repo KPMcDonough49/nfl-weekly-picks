@@ -110,15 +110,6 @@ export default function GroupDetail() {
   }
 
 
-  // Debug useEffect to monitor state changes
-  useEffect(() => {
-    console.log('State changed:', { joinPasswordPrompt, groupPassword, isMember })
-  }, [joinPasswordPrompt, groupPassword, isMember])
-
-  // Debug useEffect specifically for joinPasswordPrompt
-  useEffect(() => {
-    console.log('joinPasswordPrompt changed to:', joinPasswordPrompt)
-  }, [joinPasswordPrompt])
 
   useEffect(() => {
     // Fetch group data
@@ -209,29 +200,15 @@ export default function GroupDetail() {
   }
 
   const handleJoinGroup = () => {
-    console.log('handleJoinGroup called', { user: !!user, groupPassword, joinPasswordPrompt })
-    
     if (!user) {
       alert('You must be signed in to join a group')
       return
     }
 
-    console.log('groupPassword check:', { groupPassword, type: typeof groupPassword, truthy: !!groupPassword })
-    
     if (groupPassword) {
-      console.log('Setting join password prompt to true')
       setJoinPasswordPrompt(true)
-      console.log('After setJoinPasswordPrompt(true), joinPasswordPrompt should be true')
-      
-      // Test: Try setting it again with a timeout to see if it's a batching issue
-      setTimeout(() => {
-        console.log('Timeout test - setting joinPasswordPrompt to true again')
-        setJoinPasswordPrompt(true)
-      }, 100)
-      
-      alert('Password prompt should appear now!')
     } else {
-      console.log('No password, joining directly')
+      // No password required, join directly
       joinGroup('')
     }
   }
@@ -386,32 +363,11 @@ export default function GroupDetail() {
     )
   }
 
-  // Test: Always show a simple banner to verify component is rendering
-  console.log('Component rendering, joinPasswordPrompt:', joinPasswordPrompt, 'viewMode:', viewMode)
-  
-  let testBanner
-  try {
-    console.log('About to create testBanner')
-    
-    // Test banner that should always be visible
-    testBanner = (
-      <div style={{position: 'fixed', top: 0, left: 0, background: 'purple', color: 'white', padding: '10px', zIndex: 10000}}>
-        TEST BANNER - joinPasswordPrompt: {joinPasswordPrompt ? 'TRUE' : 'FALSE'} - viewMode: {viewMode}
-      </div>
-    )
-    
-    console.log('testBanner created:', testBanner)
-  } catch (error) {
-    console.error('Error creating testBanner:', error)
-    testBanner = <div>ERROR CREATING BANNER</div>
-  }
 
   // Show members view by default
   if (viewMode === 'members') {
-    console.log('About to return members view')
     return (
       <div className="container mx-auto px-4 py-8">
-        {testBanner}
         
         {/* Join Password Prompt Modal */}
         {joinPasswordPrompt && (
@@ -572,10 +528,7 @@ export default function GroupDetail() {
               <div className="space-y-2">
                 {!isMember ? (
                   <button 
-                    onClick={() => {
-                      console.log('Join Group clicked', { user: !!user, joining, isMember })
-                      handleJoinGroup()
-                    }}
+                    onClick={handleJoinGroup}
                     className="w-full btn-primary text-sm"
                     disabled={!user || joining}
                   >
@@ -680,36 +633,6 @@ export default function GroupDetail() {
           </div>
         )}
 
-        {/* Debug indicator */}
-        {joinPasswordPrompt && (
-          <div style={{position: 'fixed', top: 0, left: 0, background: 'red', color: 'white', padding: '10px', zIndex: 10000}}>
-            MODAL SHOULD BE VISIBLE - joinPasswordPrompt is true!
-          </div>
-        )}
-        
-        {/* Always visible test */}
-        <div style={{position: 'fixed', top: '50px', left: 0, background: 'green', color: 'white', padding: '10px', zIndex: 10000}}>
-          ALWAYS VISIBLE TEST - joinPasswordPrompt: {joinPasswordPrompt ? 'TRUE' : 'FALSE'}
-          <button 
-            onClick={() => {
-              console.log('Direct button click - setting joinPasswordPrompt to true')
-              setJoinPasswordPrompt(true)
-            }}
-            style={{background: 'white', color: 'black', padding: '5px', margin: '5px'}}
-          >
-            TEST SET STATE
-          </button>
-        </div>
-        
-        {/* Simple test - always show this when joinPasswordPrompt is true */}
-        {(() => {
-          console.log('JSX conditional check - joinPasswordPrompt:', joinPasswordPrompt);
-          return joinPasswordPrompt && (
-            <div style={{position: 'fixed', top: '100px', left: 0, background: 'blue', color: 'white', padding: '10px', zIndex: 10000}}>
-              SIMPLE TEST - This should always show when joinPasswordPrompt is true
-            </div>
-          );
-        })()}
         
 
         <div className="grid lg:grid-cols-3 gap-8">
