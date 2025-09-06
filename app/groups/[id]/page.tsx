@@ -144,6 +144,27 @@ export default function GroupDetail() {
       }
     }
 
+    const fetchUserPicks = async () => {
+      if (!user) return
+      
+      try {
+        const res = await fetch(`/api/picks?userId=${user.id}&groupId=${groupId}`)
+        const json = await res.json()
+        if (json.success) {
+          // Map picks to games
+          setGames(prevGames => prevGames.map(game => {
+            const userPick = json.data.find((pick: any) => pick.gameId === game.id)
+            return {
+              ...game,
+              userPick: userPick?.pick || null
+            }
+          }))
+        }
+      } catch (e) {
+        console.error('Failed to load user picks', e)
+      }
+    }
+
     
     // Picks are now locked per individual game based on game start time
     // No global lock - each game locks when it starts
@@ -154,7 +175,10 @@ export default function GroupDetail() {
       fetchGroupData(),
       fetchGames(),
       fetchMembers()
-    ]).finally(() => {
+    ]).then(() => {
+      // After games are loaded, fetch user picks
+      fetchUserPicks()
+    }).finally(() => {
       setLoading(false)
     })
 
