@@ -388,16 +388,20 @@ export default function GroupDetail() {
 
   // Test: Always show a simple banner to verify component is rendering
   console.log('Component rendering, joinPasswordPrompt:', joinPasswordPrompt, 'viewMode:', viewMode)
-
+  console.log('About to create testBanner')
+  
   // Test banner that should always be visible
   const testBanner = (
     <div style={{position: 'fixed', top: 0, left: 0, background: 'purple', color: 'white', padding: '10px', zIndex: 10000}}>
       TEST BANNER - joinPasswordPrompt: {joinPasswordPrompt ? 'TRUE' : 'FALSE'} - viewMode: {viewMode}
     </div>
   )
+  
+  console.log('testBanner created:', testBanner)
 
   // Show members view by default
   if (viewMode === 'members') {
+    console.log('About to return members view')
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
