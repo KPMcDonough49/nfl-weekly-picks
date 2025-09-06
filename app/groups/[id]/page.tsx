@@ -411,6 +411,7 @@ export default function GroupDetail() {
     console.log('About to return members view')
     return (
       <div className="container mx-auto px-4 py-8">
+        {testBanner}
         <div className="mb-8">
           <div className="flex items-center mb-2">
             <UserGroupIcon className="h-8 w-8 text-nfl-blue mr-3" />
@@ -908,7 +909,6 @@ export default function GroupDetail() {
             ))}
           </div>
         )}
-        {testBanner}
       </div>
     )
   }
