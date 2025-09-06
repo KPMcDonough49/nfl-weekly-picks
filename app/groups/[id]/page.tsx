@@ -409,8 +409,7 @@ export default function GroupDetail() {
   // Show members view by default
   if (viewMode === 'members') {
     console.log('About to return members view')
-    try {
-      return (
+    return (
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <div className="flex items-center mb-2">
@@ -912,10 +911,6 @@ export default function GroupDetail() {
         {testBanner}
       </div>
     )
-    } catch (error) {
-      console.error('Error in members view return:', error)
-      return <div>ERROR IN MEMBERS VIEW: {error.message}</div>
-    }
   }
 
   return null
