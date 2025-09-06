@@ -412,6 +412,42 @@ export default function GroupDetail() {
     return (
       <div className="container mx-auto px-4 py-8">
         {testBanner}
+        
+        {/* Join Password Prompt Modal */}
+        {joinPasswordPrompt && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold mb-4">Enter Group Password</h3>
+              <p className="text-gray-600 mb-4">This group is password protected. Please enter the password to join.</p>
+              <input
+                type="password"
+                value={joinPasswordInput}
+                onChange={(e) => setJoinPasswordInput(e.target.value)}
+                placeholder="Enter password"
+                className="w-full p-3 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-nfl-blue"
+                autoFocus
+              />
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => {
+                    setJoinPasswordPrompt(false)
+                    setJoinPasswordInput('')
+                  }}
+                  className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleJoinPasswordVerification}
+                  className="flex-1 px-4 py-2 bg-nfl-blue text-white rounded-lg hover:bg-blue-700"
+                >
+                  Join Group
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
         <div className="mb-8">
           <div className="flex items-center mb-2">
             <UserGroupIcon className="h-8 w-8 text-nfl-blue mr-3" />
@@ -675,45 +711,6 @@ export default function GroupDetail() {
           );
         })()}
         
-        {/* Join Password Prompt Modal */}
-        {(() => {
-          console.log('Rendering modal check:', { joinPasswordPrompt, groupPassword });
-          return null;
-        })()}
-        {joinPasswordPrompt && (
-          <div className="fixed inset-0 bg-red-500 bg-opacity-90 flex items-center justify-center z-50" style={{zIndex: 9999}}>
-            <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
-              <h3 className="text-lg font-semibold mb-4">Enter Group Password</h3>
-              <p className="text-gray-600 mb-4">This group is password protected. Please enter the password to join.</p>
-              <input
-                type="password"
-                value={joinPasswordInput}
-                onChange={(e) => setJoinPasswordInput(e.target.value)}
-                placeholder="Enter group password"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-nfl-blue focus:border-nfl-blue mb-4"
-                onKeyPress={(e) => e.key === 'Enter' && handleJoinPasswordVerification()}
-              />
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => {
-                    setJoinPasswordPrompt(false)
-                    setJoinPasswordInput('')
-                  }}
-                  className="btn-secondary"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleJoinPasswordVerification}
-                  className="btn-primary"
-                  disabled={joining}
-                >
-                  {joining ? 'Joining...' : 'Join Group'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Games and Picks */}
