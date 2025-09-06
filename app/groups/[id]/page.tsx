@@ -379,6 +379,9 @@ export default function GroupDetail() {
     )
   }
 
+  // Test: Always show a simple banner to verify component is rendering
+  console.log('Component rendering, joinPasswordPrompt:', joinPasswordPrompt)
+
   // Show members view by default
   if (viewMode === 'members') {
     return (
