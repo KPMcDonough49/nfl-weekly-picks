@@ -138,6 +138,20 @@ export default function GroupDetail() {
         const json = await res.json()
         if (json.success) {
           setGames(json.data.games as Game[])
+          
+          // Debug: Log game times for completed games
+          const completedGames = json.data.games.filter((game: any) => 
+            game.homeTeam.includes('Eagles') || game.homeTeam.includes('Chiefs') || 
+            game.awayTeam.includes('Eagles') || game.awayTeam.includes('Chiefs')
+          )
+          console.log('Completed games data:', completedGames.map((game: any) => ({
+            id: game.id,
+            matchup: `${game.awayTeam} @ ${game.homeTeam}`,
+            gameTime: game.gameTime,
+            status: game.status,
+            homeScore: game.homeScore,
+            awayScore: game.awayScore
+          })))
         }
       } catch (e) {
         console.error('Failed to load games', e)
@@ -170,7 +184,22 @@ export default function GroupDetail() {
     if (!game) return false
     
     const gameStartTime = new Date(game.gameTime)
-    return new Date() > gameStartTime
+    const now = new Date()
+    const isLocked = now > gameStartTime
+    
+    // Debug logging for specific games
+    if (game.homeTeam.includes('Eagles') || game.homeTeam.includes('Chiefs') || 
+        game.awayTeam.includes('Eagles') || game.awayTeam.includes('Chiefs')) {
+      console.log(`Game Lock Check - ${game.awayTeam} @ ${game.homeTeam}:`, {
+        gameTime: game.gameTime,
+        gameStartTime: gameStartTime.toISOString(),
+        now: now.toISOString(),
+        isLocked,
+        timeDiff: now.getTime() - gameStartTime.getTime()
+      })
+    }
+    
+    return isLocked
   }
 
   const handlePick = (gameId: string, pick: string) => {
