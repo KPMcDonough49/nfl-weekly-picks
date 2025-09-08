@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { updateGameScoresFromESPN } from '@/lib/nfl-api'
 
 export async function POST(request: NextRequest) {
   try {
+    // First, update game scores from ESPN
+    console.log('🔄 Updating game scores from ESPN...')
+    const scoreUpdateResult = await updateGameScoresFromESPN()
+    console.log(`✅ Updated ${scoreUpdateResult.updated} games, ${scoreUpdateResult.errors} errors`)
+    
     const { searchParams } = new URL(request.url)
     const week = searchParams.get('week')
     const season = searchParams.get('season')
@@ -122,8 +128,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `Processed ${totalPicksProcessed} picks and updated ${totalScoresUpdated} scores`,
+      message: `Updated ${scoreUpdateResult.updated} games from ESPN, processed ${totalPicksProcessed} picks and updated ${totalScoresUpdated} scores`,
       data: {
+        gamesUpdatedFromESPN: scoreUpdateResult.updated,
+        espnUpdateErrors: scoreUpdateResult.errors,
         gamesProcessed: completedGames.length,
         picksProcessed: totalPicksProcessed,
         scoresUpdated: totalScoresUpdated
