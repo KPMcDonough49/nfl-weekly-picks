@@ -62,7 +62,8 @@ export async function POST(request: NextRequest) {
     const lockedPicks = picks.filter((pick: any) => {
       const game = games.find(g => g.id === pick.gameId)
       if (!game) return false
-      return new Date() > new Date(game.gameTime)
+      const gameStartTime = new Date(game.gameTime)
+      return new Date() > gameStartTime
     })
     
     // Block picks for games that have already started

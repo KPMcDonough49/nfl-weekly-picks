@@ -48,15 +48,20 @@ export async function POST(request: NextRequest) {
       targetSeason = parseInt(season)
     }
 
-    // Get all completed games for this week
-    const completedGames = await prisma.game.findMany({
+    // Get all games for this week that have started and have scores
+    const allGames = await prisma.game.findMany({
       where: {
         week: targetWeek,
         season: targetSeason,
-        status: 'final',
         homeScore: { not: null },
         awayScore: { not: null }
       }
+    })
+
+    // Filter to only games that have actually started (time-based)
+    const completedGames = allGames.filter(game => {
+      const gameStartTime = new Date(game.gameTime)
+      return new Date() > gameStartTime
     })
 
     if (completedGames.length === 0) {
