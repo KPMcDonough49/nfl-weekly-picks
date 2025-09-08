@@ -84,11 +84,30 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    // Convert picks to team names for scoring
+    const picksWithTeamNames = picks.map(pick => {
+      const game = completedGames.find(g => g.id === pick.gameId)
+      if (!game) return pick
+
+      // Convert pick value to actual team name
+      let teamPick = pick.pick
+      if (pick.pick === 'home') {
+        teamPick = game.homeTeam
+      } else if (pick.pick === 'away') {
+        teamPick = game.awayTeam
+      }
+
+      return {
+        ...pick,
+        pick: teamPick
+      }
+    })
+
     let totalPicksProcessed = 0
     let totalScoresUpdated = 0
 
     // Process each pick
-    for (const pick of picks) {
+    for (const pick of picksWithTeamNames) {
       const game = completedGames.find(g => g.id === pick.gameId)
       if (!game || !game.homeScore || !game.awayScore) continue
 
