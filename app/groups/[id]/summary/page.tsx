@@ -355,7 +355,7 @@ export default function GroupSummaryPage() {
                             </span>
                             {shouldShowPick && pick.pick && (
                               <span className="text-gray-600 ml-1 text-sm">
-                                {pick.pick}
+                                {pick.pick === 'home' ? game.homeTeam : pick.pick === 'away' ? game.awayTeam : pick.pick}
                               </span>
                             )}
                             {!shouldShowPick && (
