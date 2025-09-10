@@ -121,7 +121,7 @@ export default function GroupDetail() {
           setGroupName(json.data.name)
           setGroupCreatedBy(json.data.createdBy)
           setGroupPassword(json.data.password)
-          setCurrentWeek(json.data.currentWeek || 1)
+          setCurrentWeek(json.data.week || 1)
         }
       } catch (error) {
         console.error('Error fetching group data:', error)
