@@ -374,7 +374,7 @@ export default function GroupDetail() {
   const fetchPastWeeksData = async () => {
     setLoadingPastWeeks(true)
     try {
-      const response = await fetch(`/api/groups/${groupId}/past-weeks`)
+      const response = await fetch(`/api/groups/${groupId}/past-weeks?currentWeek=${currentWeek}&currentSeason=2025`)
       const data = await response.json()
       if (data.success) {
         setPastWeeksData(data.data.weeks)

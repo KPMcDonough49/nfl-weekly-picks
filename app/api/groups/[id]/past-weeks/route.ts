@@ -9,8 +9,28 @@ export async function GET(
   try {
     const groupId = params.id
     const { searchParams } = new URL(request.url)
-    const currentWeek = parseInt(searchParams.get('currentWeek') || '1')
-    const currentSeason = parseInt(searchParams.get('currentSeason') || '2025')
+    // Derive current week/season if not provided
+    let currentWeek = parseInt(searchParams.get('currentWeek') || '0')
+    let currentSeason = parseInt(searchParams.get('currentSeason') || '0')
+
+    if (!currentWeek || !currentSeason) {
+      const now = new Date()
+      const year = now.getFullYear()
+      const seasonStart = new Date(year, 8, 4) // Approx first Thu of Sept
+      if (now >= seasonStart) {
+        const weekStart = new Date(seasonStart)
+        let weekNumber = 1
+        while (weekStart <= now && weekNumber <= 18) {
+          weekStart.setDate(weekStart.getDate() + 7)
+          weekNumber++
+        }
+        currentWeek = Math.min(18, Math.max(1, weekNumber - 1))
+        currentSeason = year
+      } else {
+        currentWeek = 18
+        currentSeason = year - 1
+      }
+    }
 
     // Get all weekly scores for this group, excluding current week
     const weeklyScores = await prisma.weeklyScore.findMany({
